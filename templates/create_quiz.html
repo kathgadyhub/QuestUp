@@ -15,8 +15,8 @@
 
 </head>
 
-<body>
 
+<body>
 
 <nav class="navbar">
 
@@ -38,6 +38,8 @@
 <main class="quiz-builder">
 
 
+    <!-- PAGE HEADER -->
+
     <div class="page-header">
 
         <p class="small-title">
@@ -58,7 +60,9 @@
     <form id="quizForm">
 
 
+        <!-- ================================= -->
         <!-- QUIZ INFORMATION -->
+        <!-- ================================= -->
 
         <section class="form-card">
 
@@ -67,7 +71,7 @@
             </h2>
 
 
-            <label>
+            <label for="quizTitle">
                 Quiz Title
             </label>
 
@@ -79,7 +83,7 @@
             >
 
 
-            <label>
+            <label for="gameMode">
                 Game Mode
             </label>
 
@@ -102,9 +106,13 @@
         </section>
 
 
-        <!-- QUESTION -->
+
+        <!-- ================================= -->
+        <!-- CURRENT QUESTION -->
+        <!-- ================================= -->
 
         <section class="form-card">
+
 
             <div class="form-card-header">
 
@@ -119,7 +127,10 @@
             </div>
 
 
-            <label>
+
+            <!-- QUESTION TYPE -->
+
+            <label for="questionType">
                 Question Type
             </label>
 
@@ -144,7 +155,10 @@
             </select>
 
 
-            <label>
+
+            <!-- QUESTION -->
+
+            <label for="questionText">
                 Your Question
             </label>
 
@@ -156,7 +170,10 @@
             ></textarea>
 
 
+
+            <!-- ================================= -->
             <!-- MULTIPLE CHOICE -->
+            <!-- ================================= -->
 
             <div id="multipleChoiceSection">
 
@@ -219,9 +236,12 @@
             </div>
 
 
-            <!-- CORRECT ANSWER -->
 
-            <label>
+            <!-- ================================= -->
+            <!-- CORRECT ANSWER -->
+            <!-- ================================= -->
+
+            <label for="correctAnswer">
                 Correct Answer
             </label>
 
@@ -233,9 +253,12 @@
             >
 
 
-            <!-- TIMER -->
 
-            <label>
+            <!-- ================================= -->
+            <!-- TIMER -->
+            <!-- ================================= -->
+
+            <label for="timer">
                 Timer
             </label>
 
@@ -263,16 +286,50 @@
 
             </select>
 
+        </section>
+
+
+
+        <!-- ================================= -->
+        <!-- QUESTIONS ADDED -->
+        <!-- ================================= -->
+
+        <section
+            class="form-card"
+            id="questionsListSection"
+            style="display: none;"
+        >
+
+            <div class="form-card-header">
+
+                <h2>
+                    3. Questions Added
+                </h2>
+
+                <span id="totalQuestions">
+                    0 Questions
+                </span>
+
+            </div>
+
+
+            <div id="questionsList"></div>
 
         </section>
 
+
+
+        <!-- ================================= -->
+        <!-- ACTION BUTTONS -->
+        <!-- ================================= -->
 
         <div class="quiz-actions">
 
             <button
                 type="button"
+                id="addQuestionBtn"
                 class="secondary-btn"
-                onclick="addQuestion()">
+            >
 
                 + Add Question
 
@@ -281,7 +338,9 @@
 
             <button
                 type="submit"
-                class="primary-btn">
+                id="createQuizBtn"
+                class="primary-btn"
+            >
 
                 Create Quiz
 
@@ -296,8 +355,14 @@
 </main>
 
 
-<script src="{{ url_for('static', filename='js/script.js') }}">
-</script>
+
+<!-- ================================= -->
+<!-- CREATE QUIZ JAVASCRIPT -->
+<!-- ================================= -->
+
+<script src="{{ url_for('static', filename='js/create_quiz.js') }}"></script>
+
 
 </body>
+
 </html>
