@@ -5,18 +5,21 @@
 
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>QuizUp - Register</title>
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
 
 </head>
 
 <body class="auth-page">
-
 
 <div class="auth-container">
 
@@ -35,7 +38,33 @@
         </p>
 
 
-        <form action="/dashboard" method="GET">
+        <!-- FLASH MESSAGES -->
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% if messages %}
+
+                {% for category, message in messages %}
+
+                    <div class="flash-message {{ category }}">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+
+        <!-- REGISTER FORM -->
+
+        <form
+            action="{{ url_for('register') }}"
+            method="POST"
+        >
+
+            <!-- FULL NAME -->
 
             <label for="name">
                 Full Name
@@ -50,6 +79,8 @@
             >
 
 
+            <!-- EMAIL -->
+
             <label for="email">
                 Email
             </label>
@@ -63,6 +94,8 @@
             >
 
 
+            <!-- PASSWORD -->
+
             <label for="password">
                 Password
             </label>
@@ -72,15 +105,22 @@
                 id="password"
                 name="password"
                 placeholder="Create a password"
+                minlength="6"
                 required
             >
 
+
+            <!-- ROLE -->
 
             <label for="role">
                 Account Type
             </label>
 
-            <select id="role" name="role">
+            <select
+                id="role"
+                name="role"
+                required
+            >
 
                 <option value="student">
                     Student
@@ -101,12 +141,13 @@
             </select>
 
 
+            <!-- SUBMIT -->
+
             <button
                 type="submit"
-                class="primary-btn full-btn">
-
+                class="primary-btn full-btn"
+            >
                 Create Account
-
             </button>
 
         </form>
@@ -116,21 +157,23 @@
 
             Already have an account?
 
-            <a href="/login">
+            <a href="{{ url_for('login') }}">
                 Login
             </a>
 
         </p>
 
 
-        <a href="/" class="back-link">
+        <a
+            href="{{ url_for('home') }}"
+            class="back-link"
+        >
             ← Back to Home
         </a>
 
     </div>
 
 </div>
-
 
 </body>
 </html>
