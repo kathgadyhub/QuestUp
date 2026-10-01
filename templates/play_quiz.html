@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>QuizUp - Playing</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+
+<nav class="navbar">
+
+    <div class="logo">
+        🎯 QuizUp
+    </div>
+
+    <div class="game-info">
+
+        <span>
+            Question 1 / 10
+        </span>
+
+        <span class="timer">
+            ⏱ 30
+        </span>
+
+    </div>
+
+</nav>
+
+
+<main class="play-container">
+
+
+    <div class="player-info">
+
+        <div class="player-animal">
+            🦁
+        </div>
+
+        <div>
+
+            <strong>
+                Lion
+            </strong>
+
+            <small>
+                150 points
+            </small>
+
+        </div>
+
+    </div>
+
+
+    <div class="question-card">
+
+        <p class="question-number">
+            QUESTION 1
+        </p>
+
+        <h1>
+            What is the largest planet
+            in our solar system?
+        </h1>
+
+
+        <div class="choices">
+
+
+            <button class="choice">
+                <span>A</span>
+                Earth
+            </button>
+
+
+            <button class="choice">
+                <span>B</span>
+                Mars
+            </button>
+
+
+            <button class="choice">
+                <span>C</span>
+                Jupiter
+            </button>
+
+
+            <button class="choice">
+                <span>D</span>
+                Venus
+            </button>
+
+
+        </div>
+
+    </div>
+
+
+</main>
+
+
+<script src="{{ url_for('static', filename='js/script.js') }}">
+</script>
+
+</body>
+</html>

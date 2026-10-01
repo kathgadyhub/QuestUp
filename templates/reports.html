@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>QuizUp - Reports</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     NAVBAR
+========================= -->
+
+<nav class="navbar">
+
+    <a href="{{ url_for('dashboard') }}" class="logo">
+        🎯 QuizUp
+    </a>
+
+    <div class="nav-links">
+
+        <a href="{{ url_for('dashboard') }}">
+            Dashboard
+        </a>
+
+        <a href="{{ url_for('leaderboard') }}">
+            Leaderboard
+        </a>
+
+        <a href="{{ url_for('animals') }}">
+            🐾 Animals
+        </a>
+
+        <a href="{{ url_for('home') }}">
+            Logout
+        </a>
+
+    </div>
+
+</nav>
+
+
+
+<!-- =========================
+     REPORTS
+========================= -->
+
+<main class="quiz-builder">
+
+
+    <!-- PAGE HEADER -->
+
+    <div class="page-header">
+
+        <p class="small-title">
+            ANALYTICS
+        </p>
+
+        <h1>
+            Reports & Assessment 📊
+        </h1>
+
+        <p>
+            Analyze the performance of your players.
+        </p>
+
+    </div>
+
+
+
+    <!-- =========================
+         QUIZ PERFORMANCE
+    ========================= -->
+
+    <section class="form-card">
+
+        <h2>
+            Quiz Performance
+        </h2>
+
+        <p>
+            Reports will appear here after players
+            complete a QuizUp game.
+        </p>
+
+    </section>
+
+
+
+    <!-- =========================
+         REPORT CARDS
+    ========================= -->
+
+    <section class="dashboard-grid">
+
+
+        <!-- TOTAL PLAYERS -->
+
+        <div class="dashboard-card">
+
+            <div class="dashboard-icon">
+                👥
+            </div>
+
+            <h2>
+                Total Players
+            </h2>
+
+            <p>
+                No game data available yet.
+            </p>
+
+        </div>
+
+
+
+        <!-- AVERAGE SCORE -->
+
+        <div class="dashboard-card">
+
+            <div class="dashboard-icon">
+                🎯
+            </div>
+
+            <h2>
+                Average Score
+            </h2>
+
+            <p>
+                No score data available yet.
+            </p>
+
+        </div>
+
+
+
+        <!-- DIFFICULT QUESTIONS -->
+
+        <div class="dashboard-card">
+
+            <div class="dashboard-icon">
+                ❓
+            </div>
+
+            <h2>
+                Difficult Questions
+            </h2>
+
+            <p>
+                Question analysis will appear
+                after a game.
+            </p>
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =========================
+         ACTIONS
+    ========================= -->
+
+    <div class="quiz-actions">
+
+        <a href="{{ url_for('dashboard') }}"
+           class="secondary-btn">
+
+            ← Back to Dashboard
+
+        </a>
+
+        <a href="{{ url_for('leaderboard') }}"
+           class="primary-btn">
+
+            View Leaderboard
+
+        </a>
+
+    </div>
+
+
+</main>
+
+
+</body>
+
+</html>

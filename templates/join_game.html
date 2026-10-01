@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>QuizUp - Join Game</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+
+<nav class="navbar">
+
+    <a href="/dashboard" class="logo">
+        🎯 QuizUp
+    </a>
+
+    <div class="nav-links">
+
+        <a href="/dashboard">
+            Dashboard
+        </a>
+
+    </div>
+
+</nav>
+
+
+<main class="join-page">
+
+
+    <div class="join-card">
+
+        <div class="join-icon">
+            🎮
+        </div>
+
+        <p class="small-title">
+            PLAYER
+        </p>
+
+        <h1>
+            Join a Game
+        </h1>
+
+        <p>
+            Enter the game code provided by your host.
+        </p>
+
+
+        <form id="joinForm">
+
+
+            <label>
+                Game Code
+            </label>
+
+            <input
+                type="text"
+                id="gameCode"
+                class="game-code-input"
+                placeholder="ABC123"
+                maxlength="6"
+                required
+            >
+
+
+            <label>
+                Your Name
+            </label>
+
+            <input
+                type="text"
+                id="playerName"
+                placeholder="Enter your name"
+                required
+            >
+
+
+            <label>
+                Choose Your Animal
+            </label>
+
+
+            <div class="animal-grid">
+
+
+                <button
+                    type="button"
+                    class="animal"
+                    data-animal="lion">
+
+                    🦁
+                    <small>Lion</small>
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="animal"
+                    data-animal="panda">
+
+                    🐼
+                    <small>Panda</small>
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="animal"
+                    data-animal="fox">
+
+                    🦊
+                    <small>Fox</small>
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="animal"
+                    data-animal="tiger">
+
+                    🐯
+                    <small>Tiger</small>
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="animal"
+                    data-animal="frog">
+
+                    🐸
+                    <small>Frog</small>
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="animal"
+                    data-animal="rabbit">
+
+                    🐰
+                    <small>Rabbit</small>
+
+                </button>
+
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="primary-btn full-btn">
+
+                Join Game
+
+            </button>
+
+
+        </form>
+
+    </div>
+
+</main>
+
+
+<script src="{{ url_for('static', filename='js/script.js') }}">
+</script>
+
+</body>
+</html>

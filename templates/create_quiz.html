@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>QuizUp - Create Quiz</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+
+<nav class="navbar">
+
+    <a href="/dashboard" class="logo">
+        🎯 QuizUp
+    </a>
+
+    <div class="nav-links">
+
+        <a href="/dashboard">
+            Dashboard
+        </a>
+
+    </div>
+
+</nav>
+
+
+<main class="quiz-builder">
+
+
+    <div class="page-header">
+
+        <p class="small-title">
+            HOST
+        </p>
+
+        <h1>
+            Create Your Quiz
+        </h1>
+
+        <p>
+            Build questions for your players.
+        </p>
+
+    </div>
+
+
+    <form id="quizForm">
+
+
+        <!-- QUIZ INFORMATION -->
+
+        <section class="form-card">
+
+            <h2>
+                1. Quiz Information
+            </h2>
+
+
+            <label>
+                Quiz Title
+            </label>
+
+            <input
+                type="text"
+                id="quizTitle"
+                placeholder="Example: General Knowledge"
+                required
+            >
+
+
+            <label>
+                Game Mode
+            </label>
+
+            <select id="gameMode">
+
+                <option value="classic">
+                    🎮 Classic Mode - Timed
+                </option>
+
+                <option value="team">
+                    👥 Team Mode - Timed
+                </option>
+
+                <option value="accuracy">
+                    🎯 Accuracy Mode - No Timer
+                </option>
+
+            </select>
+
+        </section>
+
+
+        <!-- QUESTION -->
+
+        <section class="form-card">
+
+            <div class="form-card-header">
+
+                <h2>
+                    2. Question
+                </h2>
+
+                <span id="questionNumber">
+                    Question 1
+                </span>
+
+            </div>
+
+
+            <label>
+                Question Type
+            </label>
+
+            <select id="questionType">
+
+                <option value="multiple_choice">
+                    Multiple Choice
+                </option>
+
+                <option value="true_false">
+                    True or False
+                </option>
+
+                <option value="jumbled">
+                    Jumbled Words
+                </option>
+
+                <option value="type_answer">
+                    Type Answer
+                </option>
+
+            </select>
+
+
+            <label>
+                Your Question
+            </label>
+
+            <textarea
+                id="questionText"
+                rows="4"
+                placeholder="Write your question here..."
+                required
+            ></textarea>
+
+
+            <!-- MULTIPLE CHOICE -->
+
+            <div id="multipleChoiceSection">
+
+                <label>
+                    Answer Choices
+                </label>
+
+
+                <div class="answer-option">
+
+                    <span>A</span>
+
+                    <input
+                        type="text"
+                        id="optionA"
+                        placeholder="Choice A"
+                    >
+
+                </div>
+
+
+                <div class="answer-option">
+
+                    <span>B</span>
+
+                    <input
+                        type="text"
+                        id="optionB"
+                        placeholder="Choice B"
+                    >
+
+                </div>
+
+
+                <div class="answer-option">
+
+                    <span>C</span>
+
+                    <input
+                        type="text"
+                        id="optionC"
+                        placeholder="Choice C"
+                    >
+
+                </div>
+
+
+                <div class="answer-option">
+
+                    <span>D</span>
+
+                    <input
+                        type="text"
+                        id="optionD"
+                        placeholder="Choice D"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- CORRECT ANSWER -->
+
+            <label>
+                Correct Answer
+            </label>
+
+            <input
+                type="text"
+                id="correctAnswer"
+                placeholder="Example: A"
+                required
+            >
+
+
+            <!-- TIMER -->
+
+            <label>
+                Timer
+            </label>
+
+            <select id="timer">
+
+                <option value="10">
+                    10 seconds
+                </option>
+
+                <option value="20">
+                    20 seconds
+                </option>
+
+                <option value="30" selected>
+                    30 seconds
+                </option>
+
+                <option value="60">
+                    60 seconds
+                </option>
+
+                <option value="0">
+                    No Timer
+                </option>
+
+            </select>
+
+
+        </section>
+
+
+        <div class="quiz-actions">
+
+            <button
+                type="button"
+                class="secondary-btn"
+                onclick="addQuestion()">
+
+                + Add Question
+
+            </button>
+
+
+            <button
+                type="submit"
+                class="primary-btn">
+
+                Create Quiz
+
+            </button>
+
+        </div>
+
+
+    </form>
+
+
+</main>
+
+
+<script src="{{ url_for('static', filename='js/script.js') }}">
+</script>
+
+</body>
+</html>

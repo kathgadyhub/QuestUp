@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>QuizUp - Learn, Play, Win</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+
+<body>
+
+
+<!-- =====================================================
+     NAVBAR
+===================================================== -->
+
+<nav class="navbar">
+
+    <a href="{{ url_for('home') }}" class="logo">
+        🎯 QuizUp
+    </a>
+
+
+    <div class="nav-links">
+
+        <a href="{{ url_for('login') }}">
+            Login
+        </a>
+
+        <a href="{{ url_for('register') }}"
+           class="nav-register">
+            Register
+        </a>
+
+    </div>
+
+</nav>
+
+
+
+<!-- =====================================================
+     HERO
+===================================================== -->
+
+<section class="hero">
+
+    <div class="hero-content">
+
+
+        <div class="hero-animal">
+            🦁
+        </div>
+
+
+        <p class="small-title">
+            LEARN • PLAY • COMPETE
+        </p>
+
+
+        <h1>
+            Learn While
+            <span>Playing</span>
+        </h1>
+
+
+        <p class="hero-description">
+
+            QuizUp is an interactive quiz platform where
+            students, teachers, employees and other users
+            can learn while playing fun and engaging games.
+
+        </p>
+
+
+        <div class="hero-buttons">
+
+
+            <a href="{{ url_for('register') }}"
+               class="primary-btn">
+
+                Get Started
+
+            </a>
+
+
+            <a href="{{ url_for('login') }}"
+               class="secondary-btn">
+
+                Login
+
+            </a>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     QUIZUP FEATURES
+===================================================== -->
+
+<section class="features-section">
+
+
+    <div class="section-title">
+
+        <p class="small-title">
+            QUIZUP FEATURES
+        </p>
+
+        <h2>
+            Learn More. Play More.
+        </h2>
+
+    </div>
+
+
+
+    <div class="features-grid">
+
+
+        <!-- =================================================
+             CREATE QUESTIONS
+        ================================================== -->
+
+        <a href="{{ url_for('create_quiz') }}"
+           class="feature-card feature-link">
+
+
+            <div class="feature-icon">
+                📝
+            </div>
+
+
+            <div class="feature-content">
+
+                <h3>
+                    Create<br>
+                    Questions
+                </h3>
+
+
+                <p>
+                    Hosts can create different types
+                    of questions for their players.
+                </p>
+
+
+                <span class="feature-action">
+                    Create Quiz →
+                </span>
+
+            </div>
+
+        </a>
+
+
+
+        <!-- =================================================
+             LIVE LEADERBOARD
+        ================================================== -->
+
+        <a href="{{ url_for('leaderboard') }}"
+           class="feature-card feature-link">
+
+
+            <div class="feature-icon">
+                🏆
+            </div>
+
+
+            <div class="feature-content">
+
+                <h3>
+                    Live<br>
+                    Leaderboard
+                </h3>
+
+
+                <p>
+                    See player scores and rankings
+                    during the game.
+                </p>
+
+
+                <span class="feature-action">
+                    View Leaderboard →
+                </span>
+
+            </div>
+
+        </a>
+
+
+
+        <!-- =================================================
+             REPORTS & ASSESSMENT
+        ================================================== -->
+
+        <a href="{{ url_for('reports') }}"
+           class="feature-card feature-link">
+
+
+            <div class="feature-icon">
+                📊
+            </div>
+
+
+            <div class="feature-content">
+
+                <h3>
+                    Reports &<br>
+                    Assessment
+                </h3>
+
+
+                <p>
+                    Analyze which questions your
+                    players found difficult.
+                </p>
+
+
+                <span class="feature-action">
+                    View Reports →
+                </span>
+
+            </div>
+
+        </a>
+
+
+
+        <!-- =================================================
+             ANIMAL PLAYERS
+        ================================================== -->
+
+        <a href="{{ url_for('animals') }}"
+           class="feature-card feature-link">
+
+
+            <div class="feature-icon">
+                🐼
+            </div>
+
+
+            <div class="feature-content">
+
+                <h3>
+                    Animal<br>
+                    Players
+                </h3>
+
+
+                <p>
+                    Choose an animal character to
+                    represent your player.
+                </p>
+
+
+                <span class="feature-action">
+                    Choose Animal →
+                </span>
+
+            </div>
+
+        </a>
+
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     GAME MODES
+===================================================== -->
+
+<section class="modes-section">
+
+
+    <div class="section-title">
+
+        <p class="small-title">
+            GAME MODES
+        </p>
+
+        <h2>
+            Choose How You Play
+        </h2>
+
+    </div>
+
+
+
+    <div class="modes-grid">
+
+
+        <!-- =================================================
+             CLASSIC MODE
+        ================================================== -->
+
+        <a href="{{ url_for('create_quiz') }}"
+           class="mode-card mode-link">
+
+
+            <div class="mode-icon">
+                🎮
+            </div>
+
+
+            <h3>
+                Classic Mode
+            </h3>
+
+
+            <p>
+                Play individually using your own
+                device with a timer.
+            </p>
+
+
+            <span class="mode-action">
+                Choose Classic →
+            </span>
+
+        </a>
+
+
+
+        <!-- =================================================
+             TEAM MODE
+        ================================================== -->
+
+        <a href="{{ url_for('create_quiz') }}"
+           class="mode-card mode-link">
+
+
+            <div class="mode-icon">
+                👥
+            </div>
+
+
+            <h3>
+                Team Mode
+            </h3>
+
+
+            <p>
+                Work together with your teammates
+                while answering questions.
+            </p>
+
+
+            <span class="mode-action">
+                Choose Team →
+            </span>
+
+        </a>
+
+
+
+        <!-- =================================================
+             ACCURACY MODE
+        ================================================== -->
+
+        <a href="{{ url_for('create_quiz') }}"
+           class="mode-card mode-link">
+
+
+            <div class="mode-icon">
+                🎯
+            </div>
+
+
+            <h3>
+                Accuracy Mode
+            </h3>
+
+
+            <p>
+                Answer without a timer and focus
+                on getting the correct answer.
+            </p>
+
+
+            <span class="mode-action">
+                Choose Accuracy →
+            </span>
+
+        </a>
+
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     QUICK ACTIONS
+===================================================== -->
+
+<section class="quick-actions">
+
+
+    <div class="section-title">
+
+        <p class="small-title">
+            READY TO PLAY?
+        </p>
+
+        <h2>
+            Start Your QuizUp Journey
+        </h2>
+
+    </div>
+
+
+    <div class="hero-buttons">
+
+
+        <a href="{{ url_for('register') }}"
+           class="primary-btn">
+
+            Create Account
+
+        </a>
+
+
+        <a href="{{ url_for('login') }}"
+           class="secondary-btn">
+
+            Login to QuizUp
+
+        </a>
+
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     FOOTER
+===================================================== -->
+
+<footer>
+
+    <h2>
+        🎯 QuizUp
+    </h2>
+
+
+    <p>
+        Learn. Play. Win.
+    </p>
+
+
+    <p class="copyright">
+        © 2026 QuizUp. All rights reserved.
+    </p>
+
+</footer>
+
+
+
+<!-- =====================================================
+     CLICKABLE CARD SCRIPT
+===================================================== -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const featureCards =
+        document.querySelectorAll(".feature-link");
+
+    const modeCards =
+        document.querySelectorAll(".mode-link");
+
+
+    function setupCard(card) {
+
+        card.addEventListener("click", function () {
+
+            const destination =
+                card.getAttribute("href");
+
+            if (destination) {
+                window.location.href = destination;
+            }
+
+        });
+
+
+        card.addEventListener("keydown", function (event) {
+
+            if (
+                event.key === "Enter" ||
+                event.key === " "
+            ) {
+
+                event.preventDefault();
+
+                const destination =
+                    card.getAttribute("href");
+
+                if (destination) {
+                    window.location.href = destination;
+                }
+
+            }
+
+        });
+
+    }
+
+
+    featureCards.forEach(setupCard);
+
+    modeCards.forEach(setupCard);
+
+});
+
+</script>
+
+
+</body>
+</html>

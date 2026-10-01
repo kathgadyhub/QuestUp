@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>QuizUp - Animal Players</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     NAVBAR
+========================= -->
+
+<nav class="navbar">
+
+    <a href="{{ url_for('home') }}" class="logo">
+        🎯 QuizUp
+    </a>
+
+    <div class="nav-links">
+
+        <a href="{{ url_for('home') }}">
+            Home
+        </a>
+
+        <a href="{{ url_for('dashboard') }}">
+            Dashboard
+        </a>
+
+        <a href="{{ url_for('leaderboard') }}">
+            Leaderboard
+        </a>
+
+    </div>
+
+</nav>
+
+
+
+<!-- =========================
+     ANIMAL PLAYERS
+========================= -->
+
+<main class="quiz-builder">
+
+
+    <div class="page-header">
+
+        <p class="small-title">
+            QUIZUP PLAYERS
+        </p>
+
+        <h1>
+            🐾 Choose Your Animal
+        </h1>
+
+        <p>
+            Choose an animal character to represent
+            you during the game.
+        </p>
+
+    </div>
+
+
+
+    <!-- =========================
+         ANIMAL CARDS
+    ========================= -->
+
+    <section class="dashboard-grid">
+
+
+        <!-- LION -->
+
+        <div class="dashboard-card animal-choice">
+
+            <div class="dashboard-icon">
+                🦁
+            </div>
+
+            <h2>
+                Lion
+            </h2>
+
+            <p>
+                Brave and powerful.
+            </p>
+
+            <button
+                type="button"
+                class="primary-btn"
+                onclick="selectAnimal('Lion', '🦁')">
+
+                Choose Lion
+
+            </button>
+
+        </div>
+
+
+
+        <!-- PANDA -->
+
+        <div class="dashboard-card animal-choice">
+
+            <div class="dashboard-icon">
+                🐼
+            </div>
+
+            <h2>
+                Panda
+            </h2>
+
+            <p>
+                Friendly and playful.
+            </p>
+
+            <button
+                type="button"
+                class="primary-btn"
+                onclick="selectAnimal('Panda', '🐼')">
+
+                Choose Panda
+
+            </button>
+
+        </div>
+
+
+
+        <!-- TIGER -->
+
+        <div class="dashboard-card animal-choice">
+
+            <div class="dashboard-icon">
+                🐯
+            </div>
+
+            <h2>
+                Tiger
+            </h2>
+
+            <p>
+                Fast and competitive.
+            </p>
+
+            <button
+                type="button"
+                class="primary-btn"
+                onclick="selectAnimal('Tiger', '🐯')">
+
+                Choose Tiger
+
+            </button>
+
+        </div>
+
+
+
+        <!-- BUNNY -->
+
+        <div class="dashboard-card animal-choice">
+
+            <div class="dashboard-icon">
+                🐰
+            </div>
+
+            <h2>
+                Bunny
+            </h2>
+
+            <p>
+                Quick and energetic.
+            </p>
+
+            <button
+                type="button"
+                class="primary-btn"
+                onclick="selectAnimal('Bunny', '🐰')">
+
+                Choose Bunny
+
+            </button>
+
+        </div>
+
+
+
+        <!-- FOX -->
+
+        <div class="dashboard-card animal-choice">
+
+            <div class="dashboard-icon">
+                🦊
+            </div>
+
+            <h2>
+                Fox
+            </h2>
+
+            <p>
+                Smart and clever.
+            </p>
+
+            <button
+                type="button"
+                class="primary-btn"
+                onclick="selectAnimal('Fox', '🦊')">
+
+                Choose Fox
+
+            </button>
+
+        </div>
+
+
+
+        <!-- BEAR -->
+
+        <div class="dashboard-card animal-choice">
+
+            <div class="dashboard-icon">
+                🐻
+            </div>
+
+            <h2>
+                Bear
+            </h2>
+
+            <p>
+                Strong and friendly.
+            </p>
+
+            <button
+                type="button"
+                class="primary-btn"
+                onclick="selectAnimal('Bear', '🐻')">
+
+                Choose Bear
+
+            </button>
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =========================
+         SELECTED ANIMAL
+    ========================= -->
+
+    <section class="form-card animal-selected-card">
+
+        <h2>
+            Your Selected Animal
+        </h2>
+
+        <div id="selectedAnimal">
+
+            <div class="selected-animal-icon">
+                🐾
+            </div>
+
+            <p>
+                No animal selected yet.
+            </p>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =========================
+         ACTIONS
+    ========================= -->
+
+    <div class="quiz-actions">
+
+        <a href="{{ url_for('dashboard') }}"
+           class="secondary-btn">
+
+            ← Back to Dashboard
+
+        </a>
+
+        <a href="{{ url_for('home') }}"
+           class="primary-btn">
+
+            Back to Home
+
+        </a>
+
+    </div>
+
+
+</main>
+
+
+
+<!-- =========================
+     JAVASCRIPT
+========================= -->
+
+<script>
+
+function selectAnimal(animalName, animalEmoji) {
+
+    // Save the selected animal
+    localStorage.setItem(
+        "quizupAnimal",
+        animalName
+    );
+
+    localStorage.setItem(
+        "quizupAnimalEmoji",
+        animalEmoji
+    );
+
+
+    // Show selected animal
+    const selectedAnimal =
+        document.getElementById("selectedAnimal");
+
+
+    selectedAnimal.innerHTML = `
+
+        <div class="selected-animal-icon">
+            ${animalEmoji}
+        </div>
+
+        <h3>
+            ${animalName}
+        </h3>
+
+        <p>
+            Your animal player is now ${animalName}!
+        </p>
+
+    `;
+
+
+    // Notification
+    alert(
+        "You selected " +
+        animalEmoji +
+        " " +
+        animalName +
+        "!"
+    );
+
+}
+
+</script>
+
+
+</body>
+</html>

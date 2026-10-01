@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>QuizUp - Dashboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     NAVBAR
+========================= -->
+
+<nav class="navbar">
+
+    <a href="{{ url_for('dashboard') }}" class="logo">
+        🎯 QuizUp
+    </a>
+
+    <div class="nav-links">
+
+        <a href="{{ url_for('dashboard') }}">
+            Dashboard
+        </a>
+
+        <a href="{{ url_for('join_game') }}">
+            Join Game
+        </a>
+
+        <a href="{{ url_for('leaderboard') }}">
+            Leaderboard
+        </a>
+
+        <a href="{{ url_for('reports') }}">
+            Reports
+        </a>
+
+        <a href="{{ url_for('animals') }}">
+            🐾 Animals
+        </a>
+
+        <a href="{{ url_for('home') }}">
+            Logout
+        </a>
+
+    </div>
+
+</nav>
+
+
+<!-- =========================
+     DASHBOARD
+========================= -->
+
+<main class="dashboard">
+
+
+    <!-- WELCOME -->
+
+    <section class="dashboard-welcome">
+
+        <div>
+
+            <p class="small-title">
+                DASHBOARD
+            </p>
+
+            <h1>
+                Welcome to QuizUp! 👋
+            </h1>
+
+            <p>
+                Create quizzes, join games,
+                and test your knowledge.
+            </p>
+
+        </div>
+
+
+        <div class="profile-animal" id="profileAnimal">
+            🦁
+        </div>
+
+    </section>
+
+
+
+    <!-- =========================
+         MAIN FEATURES
+    ========================= -->
+
+    <section class="dashboard-grid">
+
+
+        <!-- CREATE QUIZ -->
+
+        <a href="{{ url_for('create_quiz') }}"
+           class="dashboard-card dashboard-card-link">
+
+            <div class="dashboard-icon">
+                📝
+            </div>
+
+            <h2>
+                Create Quiz
+            </h2>
+
+            <p>
+                Create questions and host
+                your own educational game.
+            </p>
+
+            <span class="primary-btn">
+                Create Quiz
+            </span>
+
+        </a>
+
+
+
+        <!-- JOIN GAME -->
+
+        <a href="{{ url_for('join_game') }}"
+           class="dashboard-card dashboard-card-link">
+
+            <div class="dashboard-icon">
+                🎮
+            </div>
+
+            <h2>
+                Join Game
+            </h2>
+
+            <p>
+                Enter a game code to join
+                another host's quiz.
+            </p>
+
+            <span class="primary-btn">
+                Join Game
+            </span>
+
+        </a>
+
+
+
+        <!-- LEADERBOARD -->
+
+        <a href="{{ url_for('leaderboard') }}"
+           class="dashboard-card dashboard-card-link">
+
+            <div class="dashboard-icon">
+                🏆
+            </div>
+
+            <h2>
+                Live Leaderboard
+            </h2>
+
+            <p>
+                See player rankings and
+                current quiz scores.
+            </p>
+
+            <span class="primary-btn">
+                View Leaderboard
+            </span>
+
+        </a>
+
+
+
+        <!-- REPORTS -->
+
+        <a href="{{ url_for('reports') }}"
+           class="dashboard-card dashboard-card-link">
+
+            <div class="dashboard-icon">
+                📊
+            </div>
+
+            <h2>
+                Reports & Assessment
+            </h2>
+
+            <p>
+                Analyze player performance
+                and difficult questions.
+            </p>
+
+            <span class="secondary-btn">
+                View Reports
+            </span>
+
+        </a>
+
+
+    </section>
+
+
+
+    <!-- =========================
+         GAME MODES
+    ========================= -->
+
+    <section class="recent-section">
+
+        <div class="section-heading">
+
+            <h2>
+                🎮 Game Modes
+            </h2>
+
+            <p>
+                Choose how you want to play.
+            </p>
+
+        </div>
+
+
+        <div class="dashboard-grid">
+
+
+            <!-- CLASSIC -->
+
+            <a href="{{ url_for('create_quiz') }}"
+               class="dashboard-card dashboard-card-link">
+
+                <div class="dashboard-icon">
+                    ⚡
+                </div>
+
+                <h2>
+                    Classic Mode
+                </h2>
+
+                <p>
+                    Timed questions with
+                    competitive scoring.
+                </p>
+
+                <span class="primary-btn">
+                    Play Classic
+                </span>
+
+            </a>
+
+
+
+            <!-- TEAM -->
+
+            <a href="{{ url_for('create_quiz') }}"
+               class="dashboard-card dashboard-card-link">
+
+                <div class="dashboard-icon">
+                    👥
+                </div>
+
+                <h2>
+                    Team Mode
+                </h2>
+
+                <p>
+                    Work together with your
+                    teammates and earn points.
+                </p>
+
+                <span class="primary-btn">
+                    Play Team
+                </span>
+
+            </a>
+
+
+
+            <!-- ACCURACY -->
+
+            <a href="{{ url_for('create_quiz') }}"
+               class="dashboard-card dashboard-card-link">
+
+                <div class="dashboard-icon">
+                    🎯
+                </div>
+
+                <h2>
+                    Accuracy Mode
+                </h2>
+
+                <p>
+                    Focus on getting answers
+                    correct without a timer.
+                </p>
+
+                <span class="primary-btn">
+                    Play Accuracy
+                </span>
+
+            </a>
+
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =========================
+         RECENT GAMES
+    ========================= -->
+
+    <section class="recent-section">
+
+        <div class="section-heading">
+
+            <h2>
+                Recent Games
+            </h2>
+
+        </div>
+
+
+        <div class="empty-state">
+
+            <div>
+                🎮
+            </div>
+
+            <h3>
+                No games yet
+            </h3>
+
+            <p>
+                Create or join your first
+                QuizUp game.
+            </p>
+
+            <a href="{{ url_for('create_quiz') }}"
+               class="primary-btn">
+
+                Create Your First Quiz
+
+            </a>
+
+        </div>
+
+    </section>
+
+
+</main>
+
+
+<!-- =========================
+     JAVASCRIPT
+========================= -->
+
+<script>
+
+    // Get selected animal from localStorage
+
+    const savedAnimal =
+        localStorage.getItem("quizupAnimal");
+
+    const savedAnimalEmoji =
+        localStorage.getItem("quizupAnimalEmoji");
+
+
+    // Change dashboard animal
+
+    if (savedAnimalEmoji) {
+
+        const profileAnimal =
+            document.getElementById("profileAnimal");
+
+        if (profileAnimal) {
+
+            profileAnimal.textContent =
+                savedAnimalEmoji;
+
+        }
+
+    }
+
+</script>
+
+
+</body>
+
+</html>

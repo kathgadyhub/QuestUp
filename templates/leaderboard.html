@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>QuizUp - Leaderboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+
+<nav class="navbar">
+
+    <a href="/dashboard" class="logo">
+        🎯 QuizUp
+    </a>
+
+    <div class="nav-links">
+
+        <a href="/dashboard">
+            Dashboard
+        </a>
+
+    </div>
+
+</nav>
+
+
+<main class="leaderboard-page">
+
+
+    <div class="page-header">
+
+        <p class="small-title">
+            GAME RESULTS
+        </p>
+
+        <h1>
+            🏆 Leaderboard
+        </h1>
+
+        <p>
+            General Knowledge Quiz
+        </p>
+
+    </div>
+
+
+    <!-- PODIUM -->
+
+    <div class="podium">
+
+
+        <div class="podium-player second">
+
+            <div class="podium-animal">
+                🦊
+            </div>
+
+            <h3>
+                Fox
+            </h3>
+
+            <strong>
+                130
+            </strong>
+
+            <span>
+                🥈
+            </span>
+
+        </div>
+
+
+        <div class="podium-player first">
+
+            <div class="trophy">
+                🏆
+            </div>
+
+            <div class="podium-animal">
+                🦁
+            </div>
+
+            <h3>
+                Lion
+            </h3>
+
+            <strong>
+                150
+            </strong>
+
+            <span>
+                🥇 WINNER
+            </span>
+
+        </div>
+
+
+        <div class="podium-player third">
+
+            <div class="podium-animal">
+                🐼
+            </div>
+
+            <h3>
+                Panda
+            </h3>
+
+            <strong>
+                120
+            </strong>
+
+            <span>
+                🥉
+            </span>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- OTHER PLAYERS -->
+
+    <div class="ranking-list">
+
+
+        <div class="ranking-row">
+
+            <span class="rank">
+                4
+            </span>
+
+            <span class="ranking-name">
+                🐯 Tiger
+            </span>
+
+            <strong>
+                110 pts
+            </strong>
+
+        </div>
+
+
+        <div class="ranking-row">
+
+            <span class="rank">
+                5
+            </span>
+
+            <span class="ranking-name">
+                🐸 Frog
+            </span>
+
+            <strong>
+                95 pts
+            </strong>
+
+        </div>
+
+
+        <div class="ranking-row">
+
+            <span class="rank">
+                6
+            </span>
+
+            <span class="ranking-name">
+                🐰 Rabbit
+            </span>
+
+            <strong>
+                85 pts
+            </strong>
+
+        </div>
+
+
+    </div>
+
+
+    <a href="/dashboard"
+       class="secondary-btn">
+
+        ← Back to Dashboard
+
+    </a>
+
+
+</main>
+
+
+</body>
+</html>

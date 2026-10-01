@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>QuizUp - Register</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body class="auth-page">
+
+
+<div class="auth-container">
+
+    <div class="auth-card">
+
+        <a href="/" class="auth-logo">
+            🎯 QuizUp
+        </a>
+
+        <h1>
+            Create Account
+        </h1>
+
+        <p class="auth-subtitle">
+            Join QuizUp and start learning through games.
+        </p>
+
+
+        <form action="/dashboard" method="GET">
+
+            <label for="name">
+                Full Name
+            </label>
+
+            <input
+                type="text"
+                id="name"
+                name="name"
+                placeholder="Enter your full name"
+                required
+            >
+
+
+            <label for="email">
+                Email
+            </label>
+
+            <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="Enter your email"
+                required
+            >
+
+
+            <label for="password">
+                Password
+            </label>
+
+            <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Create a password"
+                required
+            >
+
+
+            <label for="role">
+                Account Type
+            </label>
+
+            <select id="role" name="role">
+
+                <option value="student">
+                    Student
+                </option>
+
+                <option value="teacher">
+                    Teacher
+                </option>
+
+                <option value="employee">
+                    Employee
+                </option>
+
+                <option value="other">
+                    Other
+                </option>
+
+            </select>
+
+
+            <button
+                type="submit"
+                class="primary-btn full-btn">
+
+                Create Account
+
+            </button>
+
+        </form>
+
+
+        <p class="auth-link">
+
+            Already have an account?
+
+            <a href="/login">
+                Login
+            </a>
+
+        </p>
+
+
+        <a href="/" class="back-link">
+            ← Back to Home
+        </a>
+
+    </div>
+
+</div>
+
+
+</body>
+</html>
