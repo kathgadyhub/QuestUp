@@ -5,18 +5,21 @@
 
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>QuizUp - Login</title>
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
 
 </head>
 
 <body class="auth-page">
-
 
 <div class="auth-container">
 
@@ -27,15 +30,39 @@
         </a>
 
         <h1>
-            Welcome Back!
+            Welcome Back
         </h1>
 
         <p class="auth-subtitle">
-            Login to continue your QuizUp journey.
+            Login to continue playing and learning.
         </p>
 
 
-        <form action="/dashboard" method="GET">
+        <!-- FLASH MESSAGES -->
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% if messages %}
+
+                {% for category, message in messages %}
+
+                    <div class="flash-message {{ category }}">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+
+        <!-- LOGIN FORM -->
+
+        <form
+            action="{{ url_for('login') }}"
+            method="POST"
+        >
 
             <label for="email">
                 Email
@@ -65,10 +92,9 @@
 
             <button
                 type="submit"
-                class="primary-btn full-btn">
-
+                class="primary-btn full-btn"
+            >
                 Login
-
             </button>
 
         </form>
@@ -78,21 +104,23 @@
 
             Don't have an account?
 
-            <a href="/register">
+            <a href="{{ url_for('register') }}">
                 Register
             </a>
 
         </p>
 
 
-        <a href="/" class="back-link">
+        <a
+            href="{{ url_for('home') }}"
+            class="back-link"
+        >
             ← Back to Home
         </a>
 
     </div>
 
 </div>
-
 
 </body>
 </html>
