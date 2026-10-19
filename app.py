@@ -10,8 +10,9 @@ from flask import (
     redirect,
     url_for,
     session,
-    flash,
+    flash
 )
+
 from supabase import create_client, Client
 from config import SUPABASE_URL, SUPABASE_KEY
 
@@ -22,10 +23,10 @@ from config import SUPABASE_URL, SUPABASE_KEY
 
 app = Flask(__name__)
 
-app.secret_key = os.environ.get("FLASK_SECRET_KEY")
-
-if not app.secret_key:
-    app.secret_key = "change-this-to-a-long-random-secret-before-deploying"
+app.secret_key = os.environ.get(
+    "FLASK_SECRET_KEY",
+    "development-only-change-this-secret-key"
+)
 
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -61,6 +62,7 @@ def home():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+
     if request.method == "GET":
         return render_template("login.html")
 
@@ -77,26 +79,27 @@ def login():
             "password": password
         })
 
-        user = result.user
-
-        if not user:
-            flash("Login failed. Please check your credentials.", "error")
+        if not result.user:
+            flash("Login failed. Please try again.", "error")
             return render_template("login.html"), 401
 
-        # Store only the user ID and email in the Flask session.
+        # Create a new session after successful login.
         session.clear()
-        session["user_id"] = str(user.id)
-        session["user_email"] = user.email or email
+        session["user_id"] = str(result.user.id)
+        session["user_email"] = result.user.email or email
 
+        flash("Login successful!", "success")
         return redirect(url_for("dashboard"))
 
     except Exception:
         app.logger.exception("Login failed")
+
         flash(
-            "Login failed. Check your email and password, "
-            "or verify your Supabase Auth configuration.",
+            "Login failed. Check your email and password. "
+            "If you registered recently, verify your email first.",
             "error"
         )
+
         return render_template("login.html"), 401
 
 
@@ -106,6 +109,7 @@ def login():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+
     if request.method == "GET":
         return render_template("register.html")
 
@@ -123,7 +127,10 @@ def register():
         return render_template("register.html"), 400
 
     if len(password) < 6:
-        flash("Your password must be at least 6 characters.", "error")
+        flash(
+            "Password must be at least 6 characters long.",
+            "error"
+        )
         return render_template("register.html"), 400
 
     try:
@@ -137,37 +144,35 @@ def register():
             }
         })
 
-        user = result.user
-
-        if not user:
-            flash(
-                "Registration could not be completed. Please try again.",
-                "error"
-            )
+        if not result.user:
+            flash("Registration failed. Please try again.", "error")
             return render_template("register.html"), 400
 
-        # Supabase may require email verification before login.
+        # Supabase may require email verification.
         if result.session:
             session.clear()
-            session["user_id"] = str(user.id)
-            session["user_email"] = user.email or email
+            session["user_id"] = str(result.user.id)
+            session["user_email"] = result.user.email or email
 
+            flash("Registration successful!", "success")
             return redirect(url_for("dashboard"))
 
         flash(
-            "Registration successful! Check your email to verify "
-            "your account before logging in.",
+            "Registration successful! Check your email "
+            "to verify your account before logging in.",
             "success"
         )
         return redirect(url_for("login"))
 
     except Exception:
         app.logger.exception("Registration failed")
+
         flash(
-            "Registration failed. The email may already be registered, "
-            "or Supabase Auth needs to be checked.",
+            "Registration failed. The email may already exist, "
+            "or Supabase Auth may need checking.",
             "error"
         )
+
         return render_template("register.html"), 400
 
 
@@ -187,7 +192,9 @@ def logout():
 
 @app.route("/dashboard")
 def dashboard():
+
     if not session.get("user_id"):
+        flash("Please log in first.", "error")
         return redirect(url_for("login"))
 
     return render_template("dashboard.html")
@@ -199,6 +206,7 @@ def dashboard():
 
 @app.route("/create-quiz")
 def create_quiz():
+
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
@@ -238,6 +246,7 @@ def leaderboard():
 
 @app.route("/reports")
 def reports():
+
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
@@ -259,6 +268,7 @@ def animals():
 
 @app.route("/api/create-quiz", methods=["POST"])
 def api_create_quiz():
+
     if not session.get("user_id"):
         return jsonify({
             "error": "Please log in before creating a quiz."
@@ -278,6 +288,7 @@ def api_create_quiz():
         game_mode = str(
             data.get("game_mode", "classic")
         ).strip()
+
         questions = data.get("questions", [])
 
         if not title:
@@ -305,6 +316,7 @@ def api_create_quiz():
         }
 
         for index, item in enumerate(questions, start=1):
+
             if not isinstance(item, dict):
                 raise ValueError(
                     f"Question {index} has invalid data."
@@ -349,6 +361,7 @@ def api_create_quiz():
             }
 
             if question_type == "multiple_choice":
+
                 options = [
                     choices["A"],
                     choices["B"],
@@ -370,7 +383,10 @@ def api_create_quiz():
                     )
 
             elif question_type == "true_false":
-                if correct_answer.casefold() not in {"true", "false"}:
+
+                if correct_answer.casefold() not in {
+                    "true", "false"
+                }:
                     raise ValueError(
                         f"Question {index}: answer must be True or False."
                     )
@@ -388,14 +404,13 @@ def api_create_quiz():
                 }
 
             question_rows.append({
-                "quiz_id": None,
                 "question": question_text,
                 "question_type": question_type,
                 "correct_answer": correct_answer,
                 "choices": choices
             })
 
-        # Insert quiz using the columns confirmed in your database.
+        # Save quiz.
         quiz_result = (
             supabase.table("quizzes")
             .insert({
@@ -407,14 +422,15 @@ def api_create_quiz():
         )
 
         if not quiz_result.data:
-            raise RuntimeError("Supabase did not return the saved quiz.")
+            raise RuntimeError("Quiz was not returned after insertion.")
 
         quiz_id = quiz_result.data[0]["id"]
 
+        # Link every question to its quiz.
         for row in question_rows:
             row["quiz_id"] = quiz_id
 
-        # Insert every question linked to this quiz.
+        # Save all questions.
         supabase.table("questions").insert(
             question_rows
         ).execute()
@@ -426,6 +442,7 @@ def api_create_quiz():
         }), 201
 
     except ValueError as error:
+
         if quiz_id is not None:
             try:
                 supabase.table("quizzes").delete().eq(
@@ -439,6 +456,7 @@ def api_create_quiz():
         }), 400
 
     except Exception:
+
         app.logger.exception("Create quiz failed")
 
         if quiz_id is not None:
