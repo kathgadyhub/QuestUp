@@ -1,1412 +1,590 @@
+
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QuizUp - Create Quiz</title>
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
-
     <style>
-
-        /* =========================================
-           CREATE QUIZ
-           ========================================= */
-
-        .quiz-builder {
-            width: min(1000px, 92%);
-            margin: 40px auto 80px;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
-
-        .page-header {
-            margin-bottom: 28px;
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f3ff;
+            color: #252044;
+            min-height: 100vh;
         }
 
+        nav {
+            background: #6d28d9;
+            color: white;
+            padding: 17px 6%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            box-shadow: 0 3px 12px #35206b20;
+        }
 
-        .small-title {
-            color: #6542e8;
-            font-size: 13px;
+        .logo {
+            color: white;
+            font-size: 23px;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        nav a.back {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        main {
+            max-width: 900px;
+            width: 92%;
+            margin: 35px auto;
+            padding-bottom: 40px;
+        }
+
+        .page-heading {
+            margin-bottom: 24px;
+        }
+
+        .eyebrow {
+            color: #7c3aed;
+            font-size: 12px;
             font-weight: 800;
             letter-spacing: 2px;
             margin-bottom: 8px;
         }
 
-
-        .page-header h1 {
-            margin: 0;
-            font-size: 34px;
-            color: #202044;
-        }
-
-
-        .page-header p:last-child {
-            margin-top: 8px;
-            color: #777;
-        }
-
-
-        /* =========================================
-           FORM CARD
-           ========================================= */
-
-        .form-card {
-            background: white;
-            border-radius: 22px;
-            padding: 28px;
-            margin-bottom: 22px;
-            box-shadow: 0 12px 35px rgba(54, 38, 120, 0.08);
-        }
-
-
-        .form-card h2 {
-            color: #22204a;
-            margin-top: 0;
-            margin-bottom: 22px;
-        }
-
-
-        .form-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 22px;
-        }
-
-
-        .form-card-header h2 {
-            margin: 0;
-        }
-
-
-        .question-number {
-            background: #eee9ff;
-            color: #5c3be0;
-            padding: 8px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-
-        /* =========================================
-           LABELS
-           ========================================= */
-
-        .form-card label {
-            display: block;
-            margin-top: 18px;
+        h1 {
+            font-size: clamp(27px, 5vw, 36px);
             margin-bottom: 8px;
-            color: #20244d;
-            font-size: 14px;
-            font-weight: 700;
         }
 
+        .subtitle {
+            color: #746e8b;
+            line-height: 1.6;
+        }
 
-        /* =========================================
-           INPUTS
-           ========================================= */
-
-        .form-card input,
-        .form-card textarea,
-        .form-card select {
-            width: 100%;
-            box-sizing: border-box;
-            border: 2px solid #e2e1f2;
-            border-radius: 13px;
-            padding: 14px 16px;
-            font-size: 15px;
-            font-family: inherit;
-            color: #202044;
+        .panel {
             background: white;
-            outline: none;
-            transition: 0.2s ease;
-        }
-
-
-        .form-card textarea {
-            resize: vertical;
-            min-height: 110px;
-        }
-
-
-        .form-card input:focus,
-        .form-card textarea:focus,
-        .form-card select:focus {
-            border-color: #6842ee;
-            box-shadow: 0 0 0 4px rgba(104, 66, 238, 0.08);
-        }
-
-
-        /* =========================================
-           ANSWER OPTIONS
-           ========================================= */
-
-        .answer-option {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-
-        .answer-option span {
-            width: 38px;
-            height: 38px;
-            min-width: 38px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #6542e8;
-            color: white;
-            border-radius: 10px;
-            font-weight: 800;
-        }
-
-
-        .answer-option input {
-            margin: 0;
-        }
-
-
-        /* =========================================
-           QUESTION CARD
-           ========================================= */
-
-        .question-card {
-            border: 2px solid #ece9fa;
+            border: 1px solid #e9e2ff;
             border-radius: 18px;
-            padding: 24px;
-            margin-top: 20px;
-            background: #fff;
-            animation: questionAppear 0.25s ease;
+            padding: 25px;
+            margin-bottom: 22px;
+            box-shadow: 0 8px 30px #49318c0b;
         }
 
-
-        @keyframes questionAppear {
-
-            from {
-                opacity: 0;
-                transform: translateY(12px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-
-        }
-
-
-        .question-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
+        h2 {
+            font-size: 19px;
             margin-bottom: 18px;
         }
 
-
-        .question-card-title {
-            color: #5d3cdd;
-            font-weight: 800;
-            font-size: 17px;
-        }
-
-
-        .remove-question {
-            border: none;
-            background: #ffecef;
-            color: #c72d52;
-            border-radius: 9px;
-            padding: 8px 13px;
-            cursor: pointer;
+        label {
+            display: block;
+            font-size: 14px;
             font-weight: 700;
+            margin-bottom: 8px;
         }
 
-
-        .remove-question:hover {
-            background: #ffdbe3;
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 13px;
+            border: 1px solid #dcd6ed;
+            border-radius: 10px;
+            background: white;
+            color: #252044;
+            font: inherit;
+            outline: none;
+            margin-bottom: 18px;
         }
 
+        input:focus, select:focus, textarea:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px #8b5cf61c;
+        }
 
-        /* =========================================
-           ACTIONS
-           ========================================= */
+        textarea {
+            min-height: 95px;
+            resize: vertical;
+        }
 
-        .quiz-actions {
+        .question-card {
+            border: 1px solid #e7defe;
+            border-radius: 15px;
+            padding: 21px;
+            margin-bottom: 18px;
+            background: #fdfcff;
+        }
+
+        .question-top {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
+            align-items: center;
             gap: 12px;
-            margin-top: 25px;
+            margin-bottom: 18px;
         }
 
+        .question-top h3 {
+            font-size: 17px;
+            color: #6d28d9;
+        }
 
-        .secondary-btn,
-        .primary-btn {
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0 15px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        button {
             border: none;
-            border-radius: 13px;
-            padding: 14px 22px;
-            font-family: inherit;
-            font-size: 14px;
-            font-weight: 800;
+            border-radius: 10px;
+            padding: 12px 17px;
+            font: inherit;
+            font-weight: 700;
             cursor: pointer;
-            transition: 0.2s ease;
+            transition: 0.2s;
         }
 
-
-        .secondary-btn {
-            background: #eeeaff;
-            color: #5b3bd7;
+        button:hover {
+            transform: translateY(-1px);
+            filter: brightness(0.97);
         }
 
+        .remove-btn {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 9px 12px;
+            font-size: 13px;
+        }
 
-        .primary-btn {
-            background: #6542e8;
+        .add-btn {
+            width: 100%;
+            border: 2px dashed #c4b5fd;
+            color: #6d28d9;
+            background: #f5f3ff;
+            margin-bottom: 22px;
+        }
+
+        .save-btn {
+            width: 100%;
+            background: #6d28d9;
             color: white;
-            box-shadow: 0 8px 18px rgba(101, 66, 232, 0.22);
+            padding: 15px;
+            font-size: 16px;
         }
 
-
-        .secondary-btn:hover,
-        .primary-btn:hover {
-            transform: translateY(-2px);
-        }
-
-
-        .primary-btn:disabled {
+        .save-btn:disabled {
             opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
+            cursor: wait;
         }
 
-
-        /* =========================================
-           QUESTION COUNT
-           ========================================= */
-
-        #questionCount {
-            margin-top: 8px;
-            color: #777;
-            font-size: 14px;
+        .notice {
+            display: none;
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
         }
 
+        .notice.error {
+            display: block;
+            color: #991b1b;
+            background: #fee2e2;
+        }
 
-        /* =========================================
-           MOBILE
-           ========================================= */
+        .notice.success {
+            display: block;
+            color: #166534;
+            background: #dcfce7;
+        }
 
-        @media (max-width: 650px) {
+        .footer-note {
+            font-size: 12px;
+            color: #817995;
+            text-align: center;
+            margin-top: 15px;
+        }
 
-            .quiz-builder {
+        @media (max-width: 600px) {
+            main {
                 width: 94%;
-                margin-top: 25px;
+                margin-top: 24px;
             }
 
-
-            .form-card {
-                padding: 20px;
+            .panel {
+                padding: 17px;
             }
 
-
-            .page-header h1 {
-                font-size: 28px;
+            .question-card {
+                padding: 15px;
             }
 
-
-            .form-card-header {
-                align-items: flex-start;
-                flex-direction: column;
+            .two-columns {
+                grid-template-columns: 1fr;
             }
-
-
-            .quiz-actions {
-                flex-direction: column;
-            }
-
-
-            .quiz-actions button {
-                width: 100%;
-            }
-
         }
-
     </style>
-
 </head>
 
-
 <body>
-
-
-<!-- =========================================
-     NAVBAR
-     ========================================= -->
-
-<nav class="navbar">
-
-    <a href="/dashboard" class="logo">
-        🎯 QuizUp
-    </a>
-
-    <div class="nav-links">
-
-        <a href="/dashboard">
-            Dashboard
-        </a>
-
-    </div>
-
-</nav>
-
-
-
-<!-- =========================================
-     MAIN
-     ========================================= -->
-
-<main class="quiz-builder">
-
-
-    <div class="page-header">
-
-        <p class="small-title">
-            HOST
-        </p>
-
-        <h1>
-            Create Your Quiz
-        </h1>
-
-        <p>
-            Build questions for your players.
-        </p>
-
-        <div id="questionCount">
-            1 question
-        </div>
-
-    </div>
-
-
-
-    <!-- =========================================
-         QUIZ INFORMATION
-         ========================================= -->
-
-    <section class="form-card">
-
-        <h2>
-            1. Quiz Information
-        </h2>
-
-
-        <label for="quizTitle">
-            Quiz Title
-        </label>
-
-        <input
-            type="text"
-            id="quizTitle"
-            placeholder="Example: General Knowledge"
-            required
-        >
-
-
-        <label for="gameMode">
-            Game Mode
-        </label>
-
-        <select id="gameMode">
-
-            <option value="classic">
-                🎮 Classic Mode - Timed
-            </option>
-
-            <option value="team">
-                👥 Team Mode - Timed
-            </option>
-
-            <option value="accuracy">
-                🎯 Accuracy Mode - No Timer
-            </option>
-
-        </select>
-
-    </section>
-
-
-
-    <!-- =========================================
-         QUESTIONS CONTAINER
-         ========================================= -->
-
-    <div id="questionsContainer">
-
-
-        <!-- =====================================
-             QUESTION 1
-             ===================================== -->
-
-        <section class="form-card question-card">
-
-            <div class="question-card-header">
-
-                <div class="question-card-title">
-                    Question 1
-                </div>
-
-            </div>
-
-
-            <label>
-                Question Type
-            </label>
-
-            <select class="question-type">
-
-                <option value="multiple_choice">
-                    Multiple Choice
-                </option>
-
-                <option value="true_false">
-                    True or False
-                </option>
-
-                <option value="jumbled">
-                    Jumbled Words
-                </option>
-
-                <option value="type_answer">
-                    Type Answer
-                </option>
-
-            </select>
-
-
-            <label>
-                Your Question
-            </label>
-
-            <textarea
-                class="question-text"
-                rows="4"
-                placeholder="Write your question here..."
-            ></textarea>
-
-
-            <!-- MULTIPLE CHOICE -->
-
-            <div class="multiple-choice-section">
-
-                <label>
-                    Answer Choices
-                </label>
-
-
-                <div class="answer-option">
-
-                    <span>A</span>
-
-                    <input
-                        type="text"
-                        class="option-a"
-                        placeholder="Choice A"
-                    >
-
-                </div>
-
-
-                <div class="answer-option">
-
-                    <span>B</span>
-
-                    <input
-                        type="text"
-                        class="option-b"
-                        placeholder="Choice B"
-                    >
-
-                </div>
-
-
-                <div class="answer-option">
-
-                    <span>C</span>
-
-                    <input
-                        type="text"
-                        class="option-c"
-                        placeholder="Choice C"
-                    >
-
-                </div>
-
-
-                <div class="answer-option">
-
-                    <span>D</span>
-
-                    <input
-                        type="text"
-                        class="option-d"
-                        placeholder="Choice D"
-                    >
-
-                </div>
-
-            </div>
-
-
-            <label>
-                Correct Answer
-            </label>
-
-            <input
-                type="text"
-                class="correct-answer"
-                placeholder="Example: A"
-            >
-
-
-            <label>
-                Timer
-            </label>
-
-            <select class="timer">
-
-                <option value="10">
-                    10 seconds
-                </option>
-
-                <option value="20">
-                    20 seconds
-                </option>
-
-                <option value="30" selected>
-                    30 seconds
-                </option>
-
-                <option value="60">
-                    60 seconds
-                </option>
-
-                <option value="0">
-                    No Timer
-                </option>
-
-            </select>
-
-        </section>
-
-    </div>
-
-
-
-    <!-- =========================================
-         BUTTONS
-         ========================================= -->
-
-    <div class="quiz-actions">
-
-        <button
-            type="button"
-            id="addQuestionBtn"
-            class="secondary-btn"
-        >
-            + Add Question
-        </button>
-
-
-        <button
-            type="button"
-            id="createQuizBtn"
-            class="primary-btn"
-        >
-            Create Quiz
-        </button>
-
-    </div>
-
-
-</main>
-
-
-
-<script>
-
-document.addEventListener("DOMContentLoaded", function () {
-
-
-    /* =========================================
-       ELEMENTS
-       ========================================= */
-
-    const addQuestionBtn =
-        document.getElementById("addQuestionBtn");
-
-    const createQuizBtn =
-        document.getElementById("createQuizBtn");
-
-    const questionsContainer =
-        document.getElementById("questionsContainer");
-
-    const questionCount =
-        document.getElementById("questionCount");
-
-
-
-    /* =========================================
-       UPDATE QUESTION NUMBERS
-       ========================================= */
-
-    function updateQuestionNumbers() {
-
-        const cards =
-            questionsContainer.querySelectorAll(
-                ".question-card"
-            );
-
-
-        cards.forEach(function (card, index) {
-
-            const title =
-                card.querySelector(
-                    ".question-card-title"
-                );
-
-
-            title.textContent =
-                "Question " + (index + 1);
-
-
-            /* Remove button */
-
-            let removeButton =
-                card.querySelector(
-                    ".remove-question"
-                );
-
-
-            if (cards.length > 1) {
-
-                if (!removeButton) {
-
-                    removeButton =
-                        document.createElement("button");
-
-                    removeButton.type = "button";
-
-                    removeButton.className =
-                        "remove-question";
-
-                    removeButton.textContent =
-                        "Remove";
-
-
-                    removeButton.addEventListener(
-                        "click",
-                        function () {
-
-                            card.remove();
-
-                            updateQuestionNumbers();
-
-                        }
-                    );
-
-
-                    card
-                        .querySelector(
-                            ".question-card-header"
-                        )
-                        .appendChild(removeButton);
-
-                }
-
-            } else {
-
-                if (removeButton) {
-
-                    removeButton.remove();
-
-                }
-
-            }
-
-        });
-
-
-        const total =
-            cards.length;
-
-
-        questionCount.textContent =
-            total +
-            (total === 1
-                ? " question"
-                : " questions");
-
-    }
-
-
-
-    /* =========================================
-       QUESTION TYPE
-       ========================================= */
-
-    function setupQuestionType(card) {
-
-        const type =
-            card.querySelector(".question-type");
-
-        const multipleChoice =
-            card.querySelector(
-                ".multiple-choice-section"
-            );
-
-        const correctAnswer =
-            card.querySelector(
-                ".correct-answer"
-            );
-
-
-        type.addEventListener(
-            "change",
-            function () {
-
-                if (
-                    type.value ===
-                    "multiple_choice"
-                ) {
-
-                    multipleChoice.style.display =
-                        "block";
-
-                    correctAnswer.placeholder =
-                        "Example: A";
-
-                } else {
-
-                    multipleChoice.style.display =
-                        "none";
-
-                    correctAnswer.placeholder =
-                        type.value === "true_false"
-                            ? "Example: True"
-                            : "Enter the correct answer";
-
-                }
-
-            }
-        );
-
-    }
-
-
-
-    /* =========================================
-       INITIAL QUESTION
-       ========================================= */
-
-    document
-        .querySelectorAll(".question-card")
-        .forEach(function (card) {
-
-            setupQuestionType(card);
-
-        });
-
-
-
-    /* =========================================
-       ADD QUESTION
-       ========================================= */
-
-    addQuestionBtn.addEventListener(
-        "click",
-        function () {
-
-
-            /*
-             * Kunin ang unang question card
-             * bilang template.
-             */
-
-            const firstCard =
-                questionsContainer.querySelector(
-                    ".question-card"
-                );
-
-
-            /*
-             * Clone ang buong question card.
-             */
-
-            const newCard =
-                firstCard.cloneNode(true);
-
-
-            /*
-             * Linisin lahat ng input.
-             */
-
-            newCard
-                .querySelectorAll("input")
-                .forEach(function (input) {
-
-                    input.value = "";
-
-                });
-
-
-            /*
-             * Linisin textarea.
-             */
-
-            newCard
-                .querySelectorAll("textarea")
-                .forEach(function (textarea) {
-
-                    textarea.value = "";
-
-                });
-
-
-            /*
-             * Reset question type.
-             */
-
-            const newType =
-                newCard.querySelector(
-                    ".question-type"
-                );
-
-            newType.value =
-                "multiple_choice";
-
-
-            /*
-             * Ipakita ulit ang choices.
-             */
-
-            const choices =
-                newCard.querySelector(
-                    ".multiple-choice-section"
-                );
-
-            choices.style.display =
-                "block";
-
-
-            /*
-             * Reset timer.
-             */
-
-            const newTimer =
-                newCard.querySelector(
-                    ".timer"
-                );
-
-            newTimer.value =
-                "30";
-
-
-            /*
-             * Tanggalin ang existing
-             * remove button mula sa clone.
-             */
-
-            const oldRemove =
-                newCard.querySelector(
-                    ".remove-question"
-                );
-
-            if (oldRemove) {
-
-                oldRemove.remove();
-
-            }
-
-
-            /*
-             * Ilagay ang bagong card
-             * sa container.
-             */
-
-            questionsContainer.appendChild(
-                newCard
-            );
-
-
-            /*
-             * I-activate ang question type.
-             */
-
-            setupQuestionType(
-                newCard
-            );
-
-
-            /*
-             * Update numbering.
-             */
-
-            updateQuestionNumbers();
-
-
-            /*
-             * Dalhin ang screen sa
-             * bagong question.
-             */
-
-            newCard.scrollIntoView({
-
+    <nav>
+        <a href="/dashboard" class="logo">🎯 QuizUp</a>
+        <a href="/dashboard" class="back">← Back to Dashboard</a>
+    </nav>
+
+    <main>
+        <header class="page-heading">
+            <p class="eyebrow">HOST CENTER</p>
+            <h1>Create Your Quiz</h1>
+            <p class="subtitle">
+                Create your quiz, add as many questions as you need,
+                and prepare your players to learn while playing.
+            </p>
+        </header>
+
+        <div id="notice" class="notice" role="alert"></div>
+
+        <form id="quizForm">
+            <section class="panel">
+                <h2>📝 Quiz Details</h2>
+
+                <label for="quizTitle">Quiz Title</label>
+                <input
+                    type="text"
+                    id="quizTitle"
+                    name="title"
+                    placeholder="e.g. General Knowledge Quiz"
+                    maxlength="150"
+                    required
+                >
+
+                <label for="gameMode">Game Mode</label>
+                <select id="gameMode" name="game_mode">
+                    <option value="classic">Classic</option>
+                    <option value="team">Team Mode</option>
+                    <option value="accuracy">Accuracy Mode</option>
+                </select>
+            </section>
+
+            <section class="panel">
+                <h2>💡 Quiz Questions</h2>
+                <div id="questionsContainer"></div>
+
+                <button type="button" id="addQuestionBtn" class="add-btn">
+                    + Add Another Question
+                </button>
+
+                <button type="submit" id="saveQuizBtn" class="save-btn">
+                    Save Quiz
+                </button>
+
+                <p class="footer-note">
+                    Make sure every question has a correct answer before saving.
+                </p>
+            </section>
+        </form>
+    </main>
+
+    <script>
+        const form = document.getElementById("quizForm");
+        const container = document.getElementById("questionsContainer");
+        const addButton = document.getElementById("addQuestionBtn");
+        const saveButton = document.getElementById("saveQuizBtn");
+        const notice = document.getElementById("notice");
+
+        let questionCount = 0;
+
+        function showNotice(message, type = "error") {
+            notice.textContent = message;
+            notice.className = "notice " + type;
+            notice.scrollIntoView({
                 behavior: "smooth",
-
                 block: "center"
+            });
+        }
 
+        function clearNotice() {
+            notice.textContent = "";
+            notice.className = "notice";
+        }
+
+        function addQuestion() {
+            questionCount++;
+
+            const card = document.createElement("section");
+            card.className = "question-card";
+
+            card.innerHTML = `
+                <div class="question-top">
+                    <h3 class="question-heading">Question</h3>
+                    <button type="button" class="remove-btn">
+                        Remove
+                    </button>
+                </div>
+
+                <label>Question Type</label>
+                <select class="question-type">
+                    <option value="multiple_choice">Multiple Choice</option>
+                    <option value="true_false">True or False</option>
+                    <option value="jumbled">Puzzle / Jumbled Words</option>
+                    <option value="type_answer">Type Answer</option>
+                </select>
+
+                <label>Question</label>
+                <textarea
+                    class="question-text"
+                    placeholder="Write your question here..."
+                    required
+                ></textarea>
+
+                <div class="choice-fields">
+                    <div class="two-columns">
+                        <div>
+                            <label>Option A</label>
+                            <input class="option-a" type="text"
+                                placeholder="First option">
+                        </div>
+                        <div>
+                            <label>Option B</label>
+                            <input class="option-b" type="text"
+                                placeholder="Second option">
+                        </div>
+                        <div>
+                            <label>Option C</label>
+                            <input class="option-c" type="text"
+                                placeholder="Third option">
+                        </div>
+                        <div>
+                            <label>Option D</label>
+                            <input class="option-d" type="text"
+                                placeholder="Fourth option">
+                        </div>
+                    </div>
+                </div>
+
+                <label class="answer-label">Correct Answer</label>
+                <input
+                    class="correct-answer"
+                    type="text"
+                    placeholder="Enter the correct answer"
+                    required
+                >
+
+                <label>Time Limit</label>
+                <select class="question-timer">
+                    <option value="10">10 seconds</option>
+                    <option value="20">20 seconds</option>
+                    <option value="30" selected>30 seconds</option>
+                    <option value="60">60 seconds</option>
+                    <option value="90">90 seconds</option>
+                </select>
+            `;
+
+            container.appendChild(card);
+
+            const typeSelect = card.querySelector(".question-type");
+
+            typeSelect.addEventListener("change", () => {
+                updateQuestionFields(card);
             });
 
+            card.querySelector(".remove-btn").addEventListener("click", () => {
+                card.remove();
+                renumberQuestions();
+                clearNotice();
+            });
 
-            /*
-             * Focus sa question.
-             */
-
-            newCard
-                .querySelector(
-                    ".question-text"
-                )
-                .focus();
-
+            updateQuestionFields(card);
+            renumberQuestions();
         }
-    );
 
+        function updateQuestionFields(card) {
+            const type = card.querySelector(".question-type").value;
+            const choices = card.querySelector(".choice-fields");
+            const answerInput = card.querySelector(".correct-answer");
+            const answerLabel = card.querySelector(".answer-label");
 
+            choices.classList.toggle(
+                "hidden",
+                type !== "multiple_choice"
+            );
 
-    /* =========================================
-       CREATE QUIZ
-       ========================================= */
-
-    createQuizBtn.addEventListener(
-        "click",
-        async function () {
-
-
-            const title =
-                document
-                    .getElementById("quizTitle")
-                    .value
-                    .trim();
-
-
-            const gameMode =
-                document
-                    .getElementById("gameMode")
-                    .value;
-
-
-            /* ==============================
-               CHECK TITLE
-               ============================== */
-
-            if (!title) {
-
-                alert(
-                    "Please enter a Quiz Title."
-                );
-
-                document
-                    .getElementById("quizTitle")
-                    .focus();
-
-                return;
-
+            if (type === "true_false") {
+                answerInput.placeholder = "Type True or False";
+                answerLabel.textContent = "Correct Answer (True or False)";
+            } else if (type === "jumbled") {
+                answerInput.placeholder = "Enter the unscrambled word";
+                answerLabel.textContent = "Correct Unscrambled Answer";
+            } else if (type === "type_answer") {
+                answerInput.placeholder = "Enter the expected answer";
+                answerLabel.textContent = "Expected Answer";
+            } else {
+                answerInput.placeholder = "Enter the correct option";
+                answerLabel.textContent = "Correct Answer (type the option text)";
             }
+        }
 
+        function renumberQuestions() {
+            const cards = container.querySelectorAll(".question-card");
 
+            cards.forEach((card, index) => {
+                card.querySelector(".question-heading").textContent =
+                    `Question ${index + 1}`;
+            });
+        }
 
-            /* ==============================
-               GET QUESTIONS
-               ============================== */
-
-            const cards =
-                questionsContainer.querySelectorAll(
-                    ".question-card"
-                );
-
-
+        function collectQuestions() {
+            const cards = container.querySelectorAll(".question-card");
             const questions = [];
 
+            for (let index = 0; index < cards.length; index++) {
+                const card = cards[index];
 
-            let invalid = false;
+                const type = card.querySelector(".question-type").value;
+                const questionText = card.querySelector(".question-text").value.trim();
+                const correctAnswer = card.querySelector(".correct-answer").value.trim();
 
+                const optionA = card.querySelector(".option-a").value.trim();
+                const optionB = card.querySelector(".option-b").value.trim();
+                const optionC = card.querySelector(".option-c").value.trim();
+                const optionD = card.querySelector(".option-d").value.trim();
 
-            cards.forEach(function (card, index) {
+                if (!questionText) {
+                    throw new Error(`Please enter the text for Question ${index + 1}.`);
+                }
 
+                if (!correctAnswer) {
+                    throw new Error(`Please enter the correct answer for Question ${index + 1}.`);
+                }
 
-                const type =
-                    card.querySelector(
-                        ".question-type"
-                    ).value;
+                if (type === "multiple_choice") {
+                    if (!optionA || !optionB || !optionC || !optionD) {
+                        throw new Error(`Please complete all four options for Question ${index + 1}.`);
+                    }
 
+                    const options = [optionA, optionB, optionC, optionD];
 
-                const text =
-                    card.querySelector(
-                        ".question-text"
-                    ).value
-                    .trim();
+                    if (!options.some(option =>
+                        option.toLowerCase() === correctAnswer.toLowerCase()
+                    )) {
+                        throw new Error(
+                            `The correct answer for Question ${index + 1} must match one of its options.`
+                        );
+                    }
+                }
 
-
-                const optionA =
-                    card.querySelector(
-                        ".option-a"
-                    ).value
-                    .trim();
-
-
-                const optionB =
-                    card.querySelector(
-                        ".option-b"
-                    ).value
-                    .trim();
-
-
-                const optionC =
-                    card.querySelector(
-                        ".option-c"
-                    ).value
-                    .trim();
-
-
-                const optionD =
-                    card.querySelector(
-                        ".option-d"
-                    ).value
-                    .trim();
-
-
-                const answer =
-                    card.querySelector(
-                        ".correct-answer"
-                    ).value
-                    .trim();
-
-
-                const timer =
-                    parseInt(
-                        card.querySelector(
-                            ".timer"
-                        ).value
-                    ) || 0;
-
-
-
-                /* ==========================
-                   QUESTION TEXT
-                   ========================== */
-
-                if (!text) {
-
-                    alert(
-                        "Please enter the question for Question " +
-                        (index + 1) +
-                        "."
+                if (type === "true_false" &&
+                    !["true", "false"].includes(correctAnswer.toLowerCase())) {
+                    throw new Error(
+                        `Question ${index + 1}: the answer must be True or False.`
                     );
-
-                    card
-                        .querySelector(
-                            ".question-text"
-                        )
-                        .focus();
-
-                    invalid = true;
-
-                    return;
-
                 }
-
-
-
-                /* ==========================
-                   CORRECT ANSWER
-                   ========================== */
-
-                if (!answer) {
-
-                    alert(
-                        "Please enter the correct answer for Question " +
-                        (index + 1) +
-                        "."
-                    );
-
-                    card
-                        .querySelector(
-                            ".correct-answer"
-                        )
-                        .focus();
-
-                    invalid = true;
-
-                    return;
-
-                }
-
-
-
-                /* ==========================
-                   MULTIPLE CHOICE
-                   ========================== */
-
-                if (
-                    type ===
-                    "multiple_choice"
-                ) {
-
-
-                    if (
-                        !optionA ||
-                        !optionB ||
-                        !optionC ||
-                        !optionD
-                    ) {
-
-                        alert(
-                            "Please complete Choices A, B, C and D for Question " +
-                            (index + 1) +
-                            "."
-                        );
-
-                        invalid = true;
-
-                        return;
-
-                    }
-
-
-                    const upperAnswer =
-                        answer.toUpperCase();
-
-
-                    if (
-                        upperAnswer !== "A" &&
-                        upperAnswer !== "B" &&
-                        upperAnswer !== "C" &&
-                        upperAnswer !== "D"
-                    ) {
-
-                        alert(
-                            "Correct Answer for Question " +
-                            (index + 1) +
-                            " must be A, B, C or D."
-                        );
-
-                        invalid = true;
-
-                        return;
-
-                    }
-
-                }
-
-
-
-                /* ==========================
-                   TRUE / FALSE
-                   ========================== */
-
-                if (
-                    type ===
-                    "true_false"
-                ) {
-
-                    const lowerAnswer =
-                        answer.toLowerCase();
-
-
-                    if (
-                        lowerAnswer !== "true" &&
-                        lowerAnswer !== "false"
-                    ) {
-
-                        alert(
-                            "Correct Answer for Question " +
-                            (index + 1) +
-                            " must be True or False."
-                        );
-
-                        invalid = true;
-
-                        return;
-
-                    }
-
-                }
-
-
-
-                /* ==========================
-                   ADD QUESTION TO ARRAY
-                   ========================== */
 
                 questions.push({
-
-                    question_type:
-                        type,
-
-                    question_text:
-                        text,
-
-                    option_a:
-                        optionA,
-
-                    option_b:
-                        optionB,
-
-                    option_c:
-                        optionC,
-
-                    option_d:
-                        optionD,
-
-                    correct_answer:
-                        answer,
-
-                    timer:
-                        timer
-
+                    question_type: type,
+                    question_text: questionText,
+                    option_a: type === "true_false" ? "True" : optionA,
+                    option_b: type === "true_false" ? "False" : optionB,
+                    option_c: optionC,
+                    option_d: optionD,
+                    correct_answer: correctAnswer,
+                    timer: Number(card.querySelector(".question-timer").value)
                 });
-
-            });
-
-
-
-            if (invalid) {
-
-                return;
-
             }
 
+            if (questions.length === 0) {
+                throw new Error("Please add at least one question.");
+            }
 
+            return questions;
+        }
 
-            /* ==============================
-               SEND TO FLASK
-               ============================== */
+        addButton.addEventListener("click", () => {
+            addQuestion();
+            clearNotice();
+        });
 
-            createQuizBtn.disabled =
-                true;
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            clearNotice();
 
-
-            createQuizBtn.textContent =
-                "Creating Quiz...";
-
+            let questions;
 
             try {
-
-
-                const response =
-                    await fetch(
-                        "/api/create-quiz",
-                        {
-
-                            method: "POST",
-
-                            headers: {
-
-                                "Content-Type":
-                                    "application/json"
-
-                            },
-
-                            body:
-                                JSON.stringify({
-
-                                    title:
-                                        title,
-
-                                    game_mode:
-                                        gameMode,
-
-                                    questions:
-                                        questions
-
-                                })
-
-                        }
-                    );
-
-
-
-                const result =
-                    await response.json();
-
-
-
-                if (response.ok) {
-
-                    alert(
-                        "Quiz created successfully!"
-                    );
-
-
-                    window.location.href =
-                        "/dashboard";
-
-                } else {
-
-                    alert(
-                        result.error ||
-                        "Failed to create quiz."
-                    );
-
-                }
-
-
+                questions = collectQuestions();
             } catch (error) {
-
-                console.error(
-                    "CREATE QUIZ ERROR:",
-                    error
-                );
-
-
-                alert(
-                    "Could not connect to the server. Please make sure Flask is running."
-                );
-
+                showNotice(error.message);
+                return;
             }
 
+            const title = document.getElementById("quizTitle").value.trim();
+            const gameMode = document.getElementById("gameMode").value;
 
-            createQuizBtn.disabled =
-                false;
+            if (!title) {
+                showNotice("Please enter a quiz title.");
+                return;
+            }
 
+            saveButton.disabled = true;
+            addButton.disabled = true;
+            saveButton.textContent = "Saving Quiz...";
 
-            createQuizBtn.textContent =
-                "Create Quiz";
+            try {
+                const response = await fetch("/api/create-quiz", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        game_mode: gameMode,
+                        questions: questions
+                    })
+                });
 
-        }
-    );
+                const result = await response.json();
 
+                if (!response.ok) {
+                    throw new Error(
+                        result.error || "Failed to save quiz."
+                    );
+                }
 
-    /*
-     * Initial numbering
-     */
+                showNotice(
+                    "Quiz saved successfully! Redirecting to dashboard...",
+                    "success"
+                );
 
-    updateQuestionNumbers();
+                saveButton.textContent = "Quiz Saved!";
 
-});
+                setTimeout(() => {
+                    window.location.href = "/dashboard";
+                }, 1200);
 
-</script>
+            } catch (error) {
+                showNotice(error.message || "An unexpected error occurred.");
+                saveButton.disabled = false;
+                addButton.disabled = false;
+                saveButton.textContent = "Save Quiz";
+            }
+        });
 
-
+        // Start with one question.
+        addQuestion();
+    </script>
 </body>
-
 </html>
