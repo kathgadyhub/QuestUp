@@ -1,4 +1,9 @@
 import os
+import re
+import json
+import time
+import random
+import string
 import logging
 
 from flask import (
@@ -47,119 +52,838 @@ supabase: Client = create_client(
 
 
 # ==========================================
-# MY QUIZZES PAGE (HTML is built into app.py,
-# so no extra template file is needed)
+# SHARED HTML PIECES (all pages below are
+# built into app.py, no extra template files)
 # ==========================================
+
+BASE_CSS = r'''
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f3ff;color:#1e1b3a}
+.nav{background:linear-gradient(90deg,#5b3fd6,#3b82f6);padding:16px 28px;display:flex;justify-content:space-between;align-items:center}
+.nav .brand{color:#fff;font-size:22px;font-weight:bold;text-decoration:none}
+.nav a.link{color:#fff;text-decoration:none;margin-left:18px;font-weight:bold;font-size:14px}
+.wrap{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:18px;padding:22px;margin:14px 0;box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.card h2,.card h3{margin-top:0}
+.meta{color:#666;font-size:14px}
+.center{text-align:center}
+.btn{border:0;border-radius:12px;padding:12px 20px;cursor:pointer;background:#6d28d9;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;display:inline-block}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.red{background:#fee2e2;color:#b91c1c}
+.btn.small{padding:8px 14px;font-size:14px;border-radius:10px}
+.bigcode{font-size:64px;letter-spacing:10px;font-weight:bold;color:#6d28d9}
+.chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.chip{background:#ede9fe;border-radius:999px;padding:8px 14px;font-weight:bold}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+.opt{border:0;border-radius:14px;padding:22px 12px;font-size:18px;font-weight:bold;color:#fff;text-align:center;cursor:pointer}
+.opt:disabled{opacity:.5;cursor:not-allowed}
+.o0{background:#e11d48}.o1{background:#2563eb}.o2{background:#d97706}.o3{background:#16a34a}
+.timer{font-size:32px;font-weight:bold;color:#6d28d9}
+.bar{height:10px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin:8px 0 14px}
+.bar>div{height:100%;background:#6d28d9;width:100%}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:12px;background:#f5f3ff;margin:6px 0}
+.good{color:#16a34a}.bad{color:#dc2626}
+input[type=text]{width:100%;padding:14px;border:2px solid #ddd6fe;border-radius:12px;font-size:18px;margin:8px 0}
+.animals{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}
+.animal{font-size:30px;background:#f5f3ff;border:3px solid transparent;border-radius:14px;padding:6px 10px;cursor:pointer}
+.animal.sel{border-color:#6d28d9;background:#ede9fe}
+.err{color:#b91c1c;font-weight:bold;min-height:22px}
+@media(max-width:520px){.opts{grid-template-columns:1fr}.bigcode{font-size:44px}}
+'''
+
+NAV_HOST = r'''
+<div class="nav"><a class="brand" href="/dashboard">QuizUp</a>
+<div><a class="link" href="/dashboard">Dashboard</a><a class="link" href="/my-quizzes">My Quizzes</a><a class="link" href="/logout">Logout</a></div></div>
+'''
+
+NAV_PLAYER = r'''
+<div class="nav"><a class="brand" href="/">QuizUp</a>
+<div><a class="link" href="/join-game">Join Game</a></div></div>
+'''
+
+
+# ------------------------------------------
+# MY QUIZZES PAGE
+# ------------------------------------------
 
 MY_QUIZZES_HTML = r'''<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>QuizUp - My Quizzes</title>
-  <style>
-    body { font-family: Arial, sans-serif; background:#f4f3ff; margin:0; color:#1e1b3a; }
-    .nav { background:linear-gradient(90deg,#5b3fd6,#3b82f6); padding:16px 28px;
-           display:flex; justify-content:space-between; align-items:center; }
-    .nav .brand { color:#fff; font-size:22px; font-weight:bold; text-decoration:none; }
-    .nav a.link { color:#fff; text-decoration:none; margin-left:18px; font-weight:bold; font-size:14px; }
-    .wrap { max-width:900px; margin:30px auto; padding:0 16px; }
-    .top { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
-    .card { background:#fff; border-radius:16px; padding:18px; margin:14px 0;
-            box-shadow:0 2px 10px rgba(0,0,0,.06); }
-    .card h3 { margin:0 0 4px; }
-    .meta { color:#666; font-size:14px; }
-    .btn { border:0; border-radius:10px; padding:8px 14px; cursor:pointer;
-           background:#6d28d9; color:#fff; text-decoration:none; font-size:14px; display:inline-block; }
-    .btn.red { background:#fee2e2; color:#b91c1c; }
-    .qs { display:none; margin-top:12px; padding-left:18px; }
-    .qs li { margin:8px 0; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuizUp - My Quizzes</title>
+<style>/*BASE_CSS*/
+.card h3{margin:0 0 4px}
+.qs{display:none;margin-top:12px;padding-left:18px}
+.qs li{margin:8px 0}
+.top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+</style>
 </head>
 <body>
-  <div class="nav">
-    <a class="brand" href="/dashboard">QuizUp</a>
-    <div>
-      <a class="link" href="/dashboard">Dashboard</a>
-      <a class="link" href="/my-quizzes">My Quizzes</a>
-      <a class="link" href="/join-game">Join Game</a>
-      <a class="link" href="/leaderboard">Leaderboard</a>
-      <a class="link" href="/reports">Reports</a>
-      <a class="link" href="/logout">Logout</a>
-    </div>
+/*NAV*/
+<div class="wrap">
+  <div class="top">
+    <h1>My Quizzes</h1>
+    <a class="btn" href="/create-quiz">+ Create Quiz</a>
   </div>
+  <div id="list">Loading...</div>
+</div>
 
-  <div class="wrap">
-    <div class="top">
-      <h1>My Quizzes</h1>
-      <a class="btn" href="/create-quiz">+ Create Quiz</a>
-    </div>
+<script>
+const list = document.getElementById("list");
 
-    <div id="list">Loading...</div>
-  </div>
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = s ?? "";
+  return d.innerHTML;
+}
 
-  <script>
-    const list = document.getElementById("list");
+async function loadQuizzes() {
+  try {
+    const res = await fetch("/api/my-quizzes");
+    const data = await res.json();
 
-    function esc(s) {
-      const d = document.createElement("div");
-      d.textContent = s ?? "";
-      return d.innerHTML;
+    if (!res.ok) {
+      list.textContent = data.error || "Something went wrong.";
+      return;
     }
 
-    async function loadQuizzes() {
-      try {
-        const res = await fetch("/api/my-quizzes");
-        const data = await res.json();
-
-        if (!res.ok) {
-          list.textContent = data.error || "Something went wrong.";
-          return;
-        }
-
-        if (!data.quizzes.length) {
-          list.innerHTML = "<p>You have no quizzes yet. <a href='/create-quiz'>Create one</a>!</p>";
-          return;
-        }
-
-        list.innerHTML = data.quizzes.map(q => `
-          <div class="card">
-            <h3>${esc(q.title)}</h3>
-            <div class="meta">${esc(q.game_mode)} • ${(q.questions || []).length} question(s)</div>
-            <div style="margin-top:10px">
-              <button class="btn" onclick="toggleQs('${q.id}')">View Questions</button>
-              <button class="btn red" onclick="deleteQuiz('${q.id}')">Delete</button>
-            </div>
-            <ol class="qs" id="qs-${q.id}">
-              ${(q.questions || []).map(x => `
-                <li>${esc(x.question)}<br>
-                    <span class="meta">Answer: ${esc(x.correct_answer)}</span></li>
-              `).join("")}
-            </ol>
-          </div>
-        `).join("");
-      } catch (e) {
-        list.textContent = "Could not load quizzes.";
-      }
+    if (!data.quizzes.length) {
+      list.innerHTML = "<p>You have no quizzes yet. <a href='/create-quiz'>Create one</a>!</p>";
+      return;
     }
 
-    function toggleQs(id) {
-      const el = document.getElementById("qs-" + id);
-      el.style.display = el.style.display === "block" ? "none" : "block";
-    }
+    list.innerHTML = data.quizzes.map(q => `
+      <div class="card">
+        <h3>${esc(q.title)}</h3>
+        <div class="meta">${esc(q.game_mode)} • ${(q.questions || []).length} question(s)</div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn small" onclick="hostGame('${q.id}')" ${(q.questions || []).length ? "" : "disabled"}>▶ Host Game</button>
+          <button class="btn small" onclick="toggleQs('${q.id}')">View Questions</button>
+          <button class="btn small red" onclick="deleteQuiz('${q.id}')">Delete</button>
+        </div>
+        <ol class="qs" id="qs-${q.id}">
+          ${(q.questions || []).map(x => `
+            <li>${esc(x.question)}<br>
+                <span class="meta">Answer: ${esc(x.correct_answer)}</span></li>
+          `).join("")}
+        </ol>
+      </div>
+    `).join("");
+  } catch (e) {
+    list.textContent = "Could not load quizzes.";
+  }
+}
 
-    async function deleteQuiz(id) {
-      if (!confirm("Delete this quiz and all its questions?")) return;
-      const res = await fetch("/api/quizzes/" + id, { method: "DELETE" });
-      if (res.ok) loadQuizzes();
-      else alert("Could not delete the quiz.");
-    }
+function toggleQs(id) {
+  const el = document.getElementById("qs-" + id);
+  el.style.display = el.style.display === "block" ? "none" : "block";
+}
 
-    loadQuizzes();
-  </script>
+async function hostGame(id) {
+  const res = await fetch("/api/host-game/" + id, { method: "POST" });
+  const data = await res.json();
+  if (res.ok) location.href = "/host/" + data.code;
+  else alert(data.error || "Could not start the game.");
+}
+
+async function deleteQuiz(id) {
+  if (!confirm("Delete this quiz and all its questions?")) return;
+  const res = await fetch("/api/quizzes/" + id, { method: "DELETE" });
+  if (res.ok) loadQuizzes();
+  else alert("Could not delete the quiz.");
+}
+
+loadQuizzes();
+</script>
 </body>
 </html>
 '''
+
+# ------------------------------------------
+# HOST PAGE (lobby, questions, leaderboard)
+# ------------------------------------------
+
+HOST_HTML = r'''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuizUp - Host Game</title>
+<style>/*BASE_CSS*/</style>
+</head>
+<body>
+/*NAV*/
+<div class="wrap" id="app">Loading...</div>
+
+<script>
+const code = location.pathname.split("/").pop();
+let state = null, lastSync = 0, lastSig = "", polledAtZero = false;
+
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = s ?? "";
+  return d.innerHTML;
+}
+
+function medal(i) { return i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i + 1) + "."; }
+
+function board(players, limit) {
+  return players.slice(0, limit).map((p, i) =>
+    `<div class="row"><span>${medal(i)} ${esc(p.animal)} ${esc(p.name)}</span><b>${p.score}</b></div>`
+  ).join("");
+}
+
+async function poll() {
+  try {
+    const res = await fetch("/api/host/" + code + "/state");
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById("app").innerHTML = '<div class="card">' + esc(data.error || "Error") + '</div>';
+      return;
+    }
+    state = data;
+    lastSync = performance.now();
+    render();
+  } catch (e) {}
+}
+
+function render() {
+  const s = state;
+  const sig = [s.status, s.current_index, s.time_up, s.player_count, s.answered_count].join("|");
+  if (sig !== lastSig) {
+    lastSig = sig;
+    polledAtZero = false;
+    draw(s);
+  }
+}
+
+function draw(s) {
+  const app = document.getElementById("app");
+
+  if (s.status === "lobby") {
+    app.innerHTML = `
+      <div class="card center">
+        <div class="meta">${esc(s.title)}</div>
+        <p>Join at <b>${esc(location.origin)}/join-game</b> using the game code</p>
+        <div class="bigcode">${esc(s.code)}</div>
+        <p><b>${s.player_count}</b> player(s) joined</p>
+        <div class="chips">${s.players.map(p => `<span class="chip">${esc(p.animal)} ${esc(p.name)}</span>`).join("")}</div>
+        <p><button class="btn" ${s.player_count ? "" : "disabled"} onclick="act('start')">▶ Start Game</button></p>
+      </div>`;
+    return;
+  }
+
+  if (s.status === "active" && s.question) {
+    const q = s.question;
+    const last = s.current_index >= s.total - 1;
+    let opts = "";
+    if (q.options.length) {
+      opts = '<div class="opts">' + q.options.map((o, i) => {
+        const right = s.time_up && s.correct_answer && o.trim().toLowerCase() === s.correct_answer.trim().toLowerCase();
+        const dim = s.time_up && !right ? "opacity:.35;" : "";
+        return `<div class="opt o${i}" style="${dim}cursor:default">${right ? "✔ " : ""}${esc(o)}</div>`;
+      }).join("") + "</div>";
+    }
+    const scrambled = q.scrambled ? `<div class="bigcode" style="font-size:42px">${esc(q.scrambled)}</div>` : "";
+    const reveal = s.time_up && !q.options.length
+      ? `<p class="center"><b>Correct answer:</b> <span class="good">${esc(s.correct_answer)}</span></p>` : "";
+    const lb = s.time_up ? `<h3>Leaderboard</h3>${board(s.players, 5)}` : "";
+
+    app.innerHTML = `
+      <div class="card">
+        <div class="row"><b>Question ${s.current_index + 1} / ${s.total}</b><span class="timer" id="timer"></span></div>
+        <div class="bar"><div id="barfill"></div></div>
+        <h2>${esc(q.text)}</h2>
+        ${scrambled}
+        ${opts}
+        ${reveal}
+        <p class="center meta">${s.answered_count} / ${s.player_count} answered</p>
+        ${lb}
+        <p class="center"><button class="btn" onclick="act('next')">${last ? "🏁 Finish Game" : (s.time_up ? "Next Question ▶" : "Skip ⏭")}</button></p>
+      </div>`;
+    tick();
+    return;
+  }
+
+  if (s.status === "finished") {
+    app.innerHTML = `
+      <div class="card">
+        <h2 class="center">🏁 Final Leaderboard</h2>
+        ${board(s.players, 50) || "<p class='center'>No players.</p>"}
+        <p class="center"><a class="btn" href="/my-quizzes">Back to My Quizzes</a></p>
+      </div>`;
+  }
+}
+
+function tick() {
+  const s = state;
+  if (!s || s.status !== "active" || !s.question) return;
+  const t = document.getElementById("timer");
+  const bar = document.getElementById("barfill");
+  if (!t || !bar) return;
+
+  const remaining = s.question.remaining - (performance.now() - lastSync) / 1000;
+  if (s.time_up) {
+    t.textContent = "Time's up!";
+    bar.style.width = "0%";
+    return;
+  }
+  t.textContent = Math.max(0, Math.ceil(remaining)) + "s";
+  bar.style.width = Math.max(0, remaining / s.question.timer * 100) + "%";
+  if (remaining <= 0 && !polledAtZero) { polledAtZero = true; poll(); }
+}
+
+async function act(what) {
+  await fetch("/api/host/" + code + "/" + what, { method: "POST" });
+  poll();
+}
+
+setInterval(poll, 2000);
+setInterval(tick, 250);
+poll();
+</script>
+</body>
+</html>
+'''
+
+# ------------------------------------------
+# JOIN GAME PAGE
+# ------------------------------------------
+
+JOIN_HTML = r'''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuizUp - Join Game</title>
+<style>/*BASE_CSS*/</style>
+</head>
+<body>
+/*NAV*/
+<div class="wrap" style="max-width:520px">
+  <div class="card center">
+    <h2>🎮 Join Game</h2>
+    <input type="text" id="code" placeholder="Game code" maxlength="6" inputmode="numeric">
+    <input type="text" id="name" placeholder="Your name" maxlength="20">
+    <p class="meta">Choose your animal</p>
+    <div class="animals" id="animals"></div>
+    <div class="err" id="err"></div>
+    <button class="btn" id="go" onclick="join()">Join</button>
+  </div>
+</div>
+
+<script>
+const ANIMALS = ["🦁","🐼","🐯","🐵","🐸","🐧","🦊","🐨","🐰","🐶","🐱","🦄"];
+let animal = ANIMALS[0];
+
+const box = document.getElementById("animals");
+box.innerHTML = ANIMALS.map(a => `<span class="animal ${a === animal ? "sel" : ""}" data-a="${a}">${a}</span>`).join("");
+box.addEventListener("click", e => {
+  const a = e.target.dataset.a;
+  if (!a) return;
+  animal = a;
+  [...box.children].forEach(c => c.classList.toggle("sel", c.dataset.a === a));
+});
+
+const params = new URLSearchParams(location.search);
+if (params.get("code")) document.getElementById("code").value = params.get("code");
+
+async function join() {
+  const err = document.getElementById("err");
+  err.textContent = "";
+  const btn = document.getElementById("go");
+  btn.disabled = true;
+  try {
+    const res = await fetch("/api/join", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: document.getElementById("code").value,
+        name: document.getElementById("name").value,
+        animal: animal
+      })
+    });
+    const data = await res.json();
+    if (res.ok) { location.href = "/play"; return; }
+    err.textContent = data.error || "Could not join.";
+  } catch (e) {
+    err.textContent = "Could not join. Try again.";
+  }
+  btn.disabled = false;
+}
+</script>
+</body>
+</html>
+'''
+
+# ------------------------------------------
+# PLAY PAGE (player screen)
+# ------------------------------------------
+
+PLAY_HTML = r'''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuizUp - Play</title>
+<style>/*BASE_CSS*/</style>
+</head>
+<body>
+/*NAV*/
+<div class="wrap" style="max-width:700px" id="app">Loading...</div>
+
+<script>
+let state = null, lastSync = 0, lastSig = "", polledAtZero = false, submitting = false;
+
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = s ?? "";
+  return d.innerHTML;
+}
+
+function medal(i) { return i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i + 1) + "."; }
+
+function board(players, limit) {
+  return players.slice(0, limit).map((p, i) =>
+    `<div class="row"><span>${medal(i)} ${esc(p.animal)} ${esc(p.name)}</span><b>${p.score}</b></div>`
+  ).join("");
+}
+
+async function poll() {
+  try {
+    const res = await fetch("/api/play/state");
+    if (res.status === 401 || res.status === 404) { location.href = "/join-game"; return; }
+    state = await res.json();
+    lastSync = performance.now();
+    render();
+  } catch (e) {}
+}
+
+function render() {
+  const s = state, me = s.me || {};
+  const locked = s.my_answer && s.my_answer.locked ? 1 : 0;
+  const sig = [s.status, s.current_index, s.time_up, locked, me.score, me.rank, s.status === "lobby" ? s.player_count : ""].join("|");
+  if (sig !== lastSig) {
+    lastSig = sig;
+    polledAtZero = false;
+    draw(s, me);
+  }
+}
+
+function header(me) {
+  return `<div class="row"><span>${esc(me.animal)} <b>${esc(me.name)}</b></span><span><b>${me.score}</b> pts • #${me.rank}</span></div>`;
+}
+
+function draw(s, me) {
+  const app = document.getElementById("app");
+
+  if (s.status === "lobby") {
+    app.innerHTML = header(me) + `
+      <div class="card center">
+        <h2>You're in! 🎉</h2>
+        <p>Waiting for the host to start the game...</p>
+        <p class="meta">${s.player_count} player(s) in the lobby</p>
+      </div>`;
+    return;
+  }
+
+  if (s.status === "active" && s.question) {
+    const q = s.question;
+
+    if (!s.time_up && s.my_answer && s.my_answer.locked) {
+      app.innerHTML = header(me) + `
+        <div class="card center">
+          <div class="timer" id="timer"></div>
+          <div class="bar"><div id="barfill"></div></div>
+          <h2>Answer locked in ✅</h2>
+          <p>Waiting for the others...</p>
+        </div>`;
+      tick();
+      return;
+    }
+
+    if (!s.time_up) {
+      let input = "";
+      if (q.options.length) {
+        input = '<div class="opts">' + q.options.map((o, i) =>
+          `<button class="opt o${i}" onclick="submitAnswer(${i})">${esc(o)}</button>`).join("") + "</div>";
+      } else {
+        const scr = q.scrambled ? `<div class="bigcode" style="font-size:40px">${esc(q.scrambled)}</div>` : "";
+        input = scr + `<input type="text" id="ans" placeholder="Type your answer" autocomplete="off">
+          <button class="btn" onclick="submitText()">Submit</button>`;
+      }
+      app.innerHTML = header(me) + `
+        <div class="card">
+          <div class="row"><b>Question ${s.current_index + 1} / ${s.total}</b><span class="timer" id="timer"></span></div>
+          <div class="bar"><div id="barfill"></div></div>
+          <h2>${esc(q.text)}</h2>
+          ${input}
+        </div>`;
+      const box = document.getElementById("ans");
+      if (box) box.addEventListener("keydown", e => { if (e.key === "Enter") submitText(); });
+      tick();
+      return;
+    }
+
+    const a = s.my_answer;
+    const verdict = a ? (a.correct ? '<span class="good">✅ Correct!</span>' : '<span class="bad">❌ Wrong</span>') : "⏰ No answer";
+    app.innerHTML = header(me) + `
+      <div class="card center">
+        <h2>${verdict}</h2>
+        <p>${a ? "+" + a.points + " points" : "+0 points"}</p>
+        <p><b>Correct answer:</b> ${esc(s.correct_answer)}</p>
+        <p class="meta">Waiting for the host to continue...</p>
+      </div>`;
+    return;
+  }
+
+  if (s.status === "finished") {
+    app.innerHTML = header(me) + `
+      <div class="card">
+        <h2 class="center">🏁 Game Over</h2>
+        <p class="center">You placed <b>#${me.rank}</b> with <b>${me.score}</b> points.</p>
+        ${board(s.players, 5)}
+        <p class="center"><a class="btn" href="/join-game">Join another game</a></p>
+      </div>`;
+  }
+}
+
+function tick() {
+  const s = state;
+  if (!s || s.status !== "active" || !s.question || s.time_up) return;
+  const t = document.getElementById("timer");
+  const bar = document.getElementById("barfill");
+  if (!t || !bar) return;
+  const remaining = s.question.remaining - (performance.now() - lastSync) / 1000;
+  t.textContent = Math.max(0, Math.ceil(remaining)) + "s";
+  bar.style.width = Math.max(0, remaining / s.question.timer * 100) + "%";
+  if (remaining <= 0 && !polledAtZero) { polledAtZero = true; poll(); }
+}
+
+async function sendAnswer(text) {
+  if (submitting) return;
+  submitting = true;
+  try {
+    const res = await fetch("/api/play/answer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answer: text })
+    });
+    if (!res.ok && res.status !== 409) {
+      const data = await res.json();
+      alert(data.error || "Could not send your answer.");
+    }
+  } catch (e) {}
+  submitting = false;
+  poll();
+}
+
+function submitAnswer(i) { sendAnswer(state.question.options[i]); }
+
+function submitText() {
+  const v = (document.getElementById("ans").value || "").trim();
+  if (v) sendAnswer(v);
+}
+
+setInterval(poll, 2000);
+setInterval(tick, 250);
+poll();
+</script>
+</body>
+</html>
+'''
+
+
+def build_page(html, nav):
+    return html.replace("/*BASE_CSS*/", BASE_CSS).replace("/*NAV*/", nav)
+
+
+MY_QUIZZES_PAGE = build_page(MY_QUIZZES_HTML, NAV_HOST)
+HOST_PAGE = build_page(HOST_HTML, NAV_HOST)
+JOIN_PAGE = build_page(JOIN_HTML, NAV_PLAYER)
+PLAY_PAGE = build_page(PLAY_HTML, NAV_PLAYER)
+
+
+# ==========================================
+# GAME HELPERS
+# ==========================================
+
+QUESTION_CACHE = {}
+
+
+def now_ms():
+    return int(time.time() * 1000)
+
+
+def parse_choices(value):
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except Exception:
+            value = {}
+    return value if isinstance(value, dict) else {}
+
+
+def scramble_text(text, seed):
+    rng = random.Random(seed)
+    words = []
+
+    for word in text.split(" "):
+        letters = list(word)
+
+        if len(set(letters)) > 1:
+            original = letters[:]
+            for _ in range(10):
+                rng.shuffle(letters)
+                if letters != original:
+                    break
+
+        words.append("".join(letters))
+
+    return " ".join(words)
+
+
+def normalize_question(row, index):
+    choices = parse_choices(row.get("choices"))
+    question_type = row.get("question_type") or ""
+
+    try:
+        timer = int(choices.get("timer", 30))
+    except (ValueError, TypeError):
+        timer = 30
+
+    timer = max(5, min(timer, 300))
+
+    options = []
+
+    if question_type == "multiple_choice":
+        options = [str(choices.get(key, "")) for key in "ABCD"]
+    elif question_type == "true_false":
+        options = ["True", "False"]
+
+    correct = str(row.get("correct_answer", ""))
+
+    scrambled = None
+    if question_type == "jumbled":
+        scrambled = scramble_text(correct, str(row.get("id", index)))
+
+    return {
+        "index": index,
+        "text": str(row.get("question", "")),
+        "type": question_type,
+        "correct": correct,
+        "options": options,
+        "timer": timer,
+        "scrambled": scrambled
+    }
+
+
+def load_questions(game):
+    key = game["id"]
+
+    if key in QUESTION_CACHE:
+        return QUESTION_CACHE[key]
+
+    try:
+        rows = (
+            supabase.table("questions")
+            .select("*")
+            .eq("quiz_id", game["quiz_id"])
+            .order("created_at")
+            .order("id")
+            .execute()
+            .data
+        )
+    except Exception:
+        rows = (
+            supabase.table("questions")
+            .select("*")
+            .eq("quiz_id", game["quiz_id"])
+            .order("id")
+            .execute()
+            .data
+        )
+
+    questions = [
+        normalize_question(row, index)
+        for index, row in enumerate(rows or [])
+    ]
+
+    QUESTION_CACHE[key] = questions
+    return questions
+
+
+def get_game(code):
+    code = str(code or "").strip()
+
+    if not code:
+        return None
+
+    result = (
+        supabase.table("games")
+        .select("*")
+        .eq("code", code)
+        .limit(1)
+        .execute()
+    )
+
+    return result.data[0] if result.data else None
+
+
+def host_game_or_error(code):
+    if not session.get("user_id"):
+        return None, (jsonify({"error": "Please log in first."}), 401)
+
+    game = get_game(code)
+
+    if not game or game["host_id"] != session["user_id"]:
+        return None, (jsonify({"error": "Game not found."}), 404)
+
+    return game, None
+
+
+def build_state(game, viewer_player_id=None):
+    questions = load_questions(game)
+    total = len(questions)
+
+    players = (
+        supabase.table("players")
+        .select("id,name,animal,score")
+        .eq("game_id", game["id"])
+        .order("score", desc=True)
+        .order("joined_at")
+        .execute()
+        .data
+        or []
+    )
+
+    state = {
+        "code": game["code"],
+        "title": game.get("quiz_title") or "Quiz",
+        "status": game["status"],
+        "total": total,
+        "current_index": game["current_index"],
+        "players": players,
+        "player_count": len(players),
+        "question": None,
+        "time_up": False,
+        "answered_count": 0,
+        "correct_answer": None,
+        "my_answer": None
+    }
+
+    if viewer_player_id:
+        for rank, player in enumerate(players, start=1):
+            if str(player["id"]) == str(viewer_player_id):
+                me = dict(player)
+                me["rank"] = rank
+                state["me"] = me
+                break
+
+    index = game["current_index"]
+
+    if game["status"] == "active" and 0 <= index < total:
+        q = questions[index]
+
+        started = int(game.get("question_started_ms") or now_ms())
+        elapsed = (now_ms() - started) / 1000
+        remaining = max(0.0, q["timer"] - elapsed)
+
+        answers = (
+            supabase.table("answers")
+            .select("player_id,is_correct,points")
+            .eq("game_id", game["id"])
+            .eq("question_index", index)
+            .execute()
+            .data
+            or []
+        )
+
+        answered = len(answers)
+
+        time_up = remaining <= 0 or (
+            len(players) > 0 and answered >= len(players)
+        )
+
+        state["question"] = {
+            "index": index,
+            "text": q["text"],
+            "type": q["type"],
+            "options": q["options"],
+            "scrambled": q["scrambled"],
+            "timer": q["timer"],
+            "remaining": remaining
+        }
+
+        state["time_up"] = time_up
+        state["answered_count"] = answered
+
+        if time_up:
+            state["correct_answer"] = q["correct"]
+
+        if viewer_player_id:
+            mine = next(
+                (
+                    a for a in answers
+                    if str(a["player_id"]) == str(viewer_player_id)
+                ),
+                None
+            )
+
+            if mine:
+                if time_up:
+                    state["my_answer"] = {
+                        "locked": True,
+                        "correct": bool(mine["is_correct"]),
+                        "points": mine["points"]
+                    }
+                else:
+                    state["my_answer"] = {"locked": True}
+
+    return state
+
+
+def add_my_quizzes_link(html):
+    """Adds a My Quizzes link to the dashboard without editing dashboard.html."""
+
+    if "/my-quizzes" in html:
+        return html
+
+    try:
+        match = re.search(
+            r"<a\b[^>]*>\s*Dashboard\s*</a>",
+            html,
+            re.IGNORECASE
+        )
+
+        if match:
+            anchor = match.group(0)
+            new_anchor = re.sub(
+                r"""href=["'][^"']*["']""",
+                'href="/my-quizzes"',
+                anchor,
+                count=1
+            )
+            new_anchor = re.sub(
+                r"Dashboard", "My Quizzes", new_anchor, count=1
+            )
+            new_anchor = re.sub(r"\bactive\b", "", new_anchor)
+            return html.replace(anchor, anchor + new_anchor, 1)
+    except Exception:
+        app.logger.exception("Could not add My Quizzes link")
+
+    floating = (
+        '<a href="/my-quizzes" style="position:fixed;right:20px;'
+        "bottom:20px;background:#6d28d9;color:#fff;padding:12px 18px;"
+        "border-radius:12px;text-decoration:none;font-weight:bold;"
+        'z-index:9999">📚 My Quizzes</a>'
+    )
+
+    if "</body>" in html:
+        return html.replace("</body>", floating + "</body>", 1)
+
+    return html + floating
 
 
 # ==========================================
@@ -312,7 +1036,8 @@ def dashboard():
         flash("Please log in first.", "error")
         return redirect(url_for("login"))
 
-    return render_template("dashboard.html")
+    html = render_template("dashboard.html")
+    return add_my_quizzes_link(html)
 
 
 # ==========================================
@@ -339,8 +1064,7 @@ def my_quizzes():
         flash("Please log in first.", "error")
         return redirect(url_for("login"))
 
-    # Returned as plain HTML (no Jinja processing).
-    return MY_QUIZZES_HTML
+    return MY_QUIZZES_PAGE
 
 
 @app.route("/api/my-quizzes")
@@ -399,21 +1123,342 @@ def api_delete_quiz(quiz_id):
 
 
 # ==========================================
-# JOIN GAME
+# HOST A GAME
+# ==========================================
+
+@app.route("/api/host-game/<quiz_id>", methods=["POST"])
+def api_host_game(quiz_id):
+
+    if not session.get("user_id"):
+        return jsonify({"error": "Please log in first."}), 401
+
+    try:
+        quiz_result = (
+            supabase.table("quizzes")
+            .select("id,title,game_mode")
+            .eq("id", quiz_id)
+            .eq("host_id", session["user_id"])
+            .execute()
+        )
+
+        if not quiz_result.data:
+            return jsonify({"error": "Quiz not found."}), 404
+
+        quiz = quiz_result.data[0]
+
+        question_check = (
+            supabase.table("questions")
+            .select("id")
+            .eq("quiz_id", quiz_id)
+            .limit(1)
+            .execute()
+        )
+
+        if not question_check.data:
+            return jsonify({
+                "error": "This quiz has no questions."
+            }), 400
+
+        code = None
+
+        for _ in range(15):
+            candidate = "".join(random.choices(string.digits, k=6))
+
+            if not get_game(candidate):
+                code = candidate
+                break
+
+        if not code:
+            return jsonify({
+                "error": "Could not generate a game code. Try again."
+            }), 500
+
+        supabase.table("games").insert({
+            "code": code,
+            "quiz_id": str(quiz["id"]),
+            "quiz_title": quiz["title"],
+            "game_mode": quiz.get("game_mode") or "classic",
+            "host_id": session["user_id"],
+            "status": "lobby",
+            "current_index": -1
+        }).execute()
+
+        return jsonify({"success": True, "code": code}), 201
+
+    except Exception:
+        app.logger.exception("Host game failed")
+        return jsonify({
+            "error": (
+                "Could not create the game. Make sure the games, "
+                "players and answers tables exist in Supabase."
+            )
+        }), 500
+
+
+@app.route("/host/<code>")
+def host_page(code):
+
+    if not session.get("user_id"):
+        flash("Please log in first.", "error")
+        return redirect(url_for("login"))
+
+    return HOST_PAGE
+
+
+@app.route("/api/host/<code>/state")
+def api_host_state(code):
+
+    game, error = host_game_or_error(code)
+
+    if error:
+        return error
+
+    try:
+        return jsonify(build_state(game)), 200
+    except Exception:
+        app.logger.exception("Host state failed")
+        return jsonify({"error": "Could not load the game."}), 500
+
+
+@app.route("/api/host/<code>/start", methods=["POST"])
+def api_host_start(code):
+
+    game, error = host_game_or_error(code)
+
+    if error:
+        return error
+
+    try:
+        if game["status"] != "lobby":
+            return jsonify({"error": "Game already started."}), 400
+
+        if not load_questions(game):
+            return jsonify({"error": "This quiz has no questions."}), 400
+
+        supabase.table("games").update({
+            "status": "active",
+            "current_index": 0,
+            "question_started_ms": now_ms()
+        }).eq("id", game["id"]).execute()
+
+        return jsonify({"success": True}), 200
+
+    except Exception:
+        app.logger.exception("Start game failed")
+        return jsonify({"error": "Could not start the game."}), 500
+
+
+@app.route("/api/host/<code>/next", methods=["POST"])
+def api_host_next(code):
+
+    game, error = host_game_or_error(code)
+
+    if error:
+        return error
+
+    try:
+        if game["status"] != "active":
+            return jsonify({"error": "Game is not active."}), 400
+
+        total = len(load_questions(game))
+        next_index = game["current_index"] + 1
+
+        if next_index >= total:
+            supabase.table("games").update({
+                "status": "finished"
+            }).eq("id", game["id"]).execute()
+        else:
+            supabase.table("games").update({
+                "current_index": next_index,
+                "question_started_ms": now_ms()
+            }).eq("id", game["id"]).execute()
+
+        return jsonify({"success": True}), 200
+
+    except Exception:
+        app.logger.exception("Next question failed")
+        return jsonify({"error": "Could not move to the next question."}), 500
+
+
+# ==========================================
+# JOIN GAME + PLAY (PLAYERS)
 # ==========================================
 
 @app.route("/join-game")
 def join_game():
-    return render_template("join_game.html")
+    return JOIN_PAGE
 
 
-# ==========================================
-# PLAY QUIZ
-# ==========================================
+@app.route("/api/join", methods=["POST"])
+def api_join():
+
+    data = request.get_json(silent=True) or {}
+
+    code = str(data.get("code", "")).strip()
+    name = str(data.get("name", "")).strip()[:20]
+    animal = str(data.get("animal", "🦁")).strip()[:8] or "🦁"
+
+    if not code or not name:
+        return jsonify({
+            "error": "Please enter the game code and your name."
+        }), 400
+
+    try:
+        game = get_game(code)
+
+        if not game:
+            return jsonify({"error": "Game code not found."}), 404
+
+        if game["status"] == "finished":
+            return jsonify({"error": "This game has already ended."}), 400
+
+        taken = (
+            supabase.table("players")
+            .select("id")
+            .eq("game_id", game["id"])
+            .eq("name", name)
+            .execute()
+        )
+
+        if taken.data:
+            return jsonify({
+                "error": "That name is already taken. Try another one."
+            }), 409
+
+        created = supabase.table("players").insert({
+            "game_id": game["id"],
+            "name": name,
+            "animal": animal,
+            "score": 0
+        }).execute()
+
+        player = created.data[0]
+
+        session["player_id"] = str(player["id"])
+        session["player_game"] = game["code"]
+
+        return jsonify({"success": True}), 201
+
+    except Exception:
+        app.logger.exception("Join game failed")
+        return jsonify({"error": "Could not join the game."}), 500
+
 
 @app.route("/play")
 def play():
-    return render_template("play_quiz.html")
+
+    if not session.get("player_id") or not session.get("player_game"):
+        return redirect(url_for("join_game"))
+
+    return PLAY_PAGE
+
+
+@app.route("/api/play/state")
+def api_play_state():
+
+    player_id = session.get("player_id")
+    code = session.get("player_game")
+
+    if not player_id or not code:
+        return jsonify({"error": "Not in a game."}), 401
+
+    try:
+        game = get_game(code)
+
+        if not game:
+            return jsonify({"error": "Game not found."}), 404
+
+        state = build_state(game, player_id)
+
+        if "me" not in state:
+            return jsonify({"error": "Player not found."}), 404
+
+        return jsonify(state), 200
+
+    except Exception:
+        app.logger.exception("Play state failed")
+        return jsonify({"error": "Could not load the game."}), 500
+
+
+@app.route("/api/play/answer", methods=["POST"])
+def api_play_answer():
+
+    player_id = session.get("player_id")
+    code = session.get("player_game")
+
+    if not player_id or not code:
+        return jsonify({"error": "Not in a game."}), 401
+
+    try:
+        game = get_game(code)
+
+        if not game or game["status"] != "active":
+            return jsonify({"error": "No active question."}), 400
+
+        questions = load_questions(game)
+        index = game["current_index"]
+
+        if not 0 <= index < len(questions):
+            return jsonify({"error": "No active question."}), 400
+
+        q = questions[index]
+
+        started = int(game.get("question_started_ms") or now_ms())
+        elapsed = (now_ms() - started) / 1000
+
+        if elapsed > q["timer"] + 1.5:
+            return jsonify({"error": "Time is up!"}), 400
+
+        data = request.get_json(silent=True) or {}
+        answer = str(data.get("answer", "")).strip()
+
+        if not answer:
+            return jsonify({"error": "Please enter an answer."}), 400
+
+        is_correct = (
+            answer.casefold() == q["correct"].strip().casefold()
+        )
+
+        points = 0
+
+        if is_correct:
+            if game.get("game_mode") == "accuracy":
+                points = 1000
+            else:
+                ratio = max(0.0, 1 - elapsed / q["timer"])
+                points = int(500 + 500 * ratio)
+
+        try:
+            supabase.table("answers").insert({
+                "game_id": game["id"],
+                "player_id": player_id,
+                "question_index": index,
+                "answer": answer[:200],
+                "is_correct": is_correct,
+                "points": points
+            }).execute()
+        except Exception:
+            return jsonify({"error": "You already answered."}), 409
+
+        if points:
+            current = (
+                supabase.table("players")
+                .select("score")
+                .eq("id", player_id)
+                .execute()
+            )
+
+            score = current.data[0]["score"] if current.data else 0
+
+            supabase.table("players").update({
+                "score": score + points
+            }).eq("id", player_id).execute()
+
+        return jsonify({"success": True}), 200
+
+    except Exception:
+        app.logger.exception("Answer failed")
+        return jsonify({"error": "Could not send your answer."}), 500
 
 
 # ==========================================
@@ -595,7 +1640,7 @@ def api_create_quiz():
                 "choices": choices
             })
 
-        # Save quiz (now linked to the logged-in user via host_id).
+        # Save quiz (linked to the logged-in user via host_id).
         quiz_result = (
             supabase.table("quizzes")
             .insert({
