@@ -1,4 +1,3 @@
-
 import os
 import logging
 
@@ -45,6 +44,122 @@ supabase: Client = create_client(
     SUPABASE_URL,
     SUPABASE_KEY
 )
+
+
+# ==========================================
+# MY QUIZZES PAGE (HTML is built into app.py,
+# so no extra template file is needed)
+# ==========================================
+
+MY_QUIZZES_HTML = r'''<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QuizUp - My Quizzes</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f4f3ff; margin:0; color:#1e1b3a; }
+    .nav { background:linear-gradient(90deg,#5b3fd6,#3b82f6); padding:16px 28px;
+           display:flex; justify-content:space-between; align-items:center; }
+    .nav .brand { color:#fff; font-size:22px; font-weight:bold; text-decoration:none; }
+    .nav a.link { color:#fff; text-decoration:none; margin-left:18px; font-weight:bold; font-size:14px; }
+    .wrap { max-width:900px; margin:30px auto; padding:0 16px; }
+    .top { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+    .card { background:#fff; border-radius:16px; padding:18px; margin:14px 0;
+            box-shadow:0 2px 10px rgba(0,0,0,.06); }
+    .card h3 { margin:0 0 4px; }
+    .meta { color:#666; font-size:14px; }
+    .btn { border:0; border-radius:10px; padding:8px 14px; cursor:pointer;
+           background:#6d28d9; color:#fff; text-decoration:none; font-size:14px; display:inline-block; }
+    .btn.red { background:#fee2e2; color:#b91c1c; }
+    .qs { display:none; margin-top:12px; padding-left:18px; }
+    .qs li { margin:8px 0; }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <a class="brand" href="/dashboard">QuizUp</a>
+    <div>
+      <a class="link" href="/dashboard">Dashboard</a>
+      <a class="link" href="/my-quizzes">My Quizzes</a>
+      <a class="link" href="/join-game">Join Game</a>
+      <a class="link" href="/leaderboard">Leaderboard</a>
+      <a class="link" href="/reports">Reports</a>
+      <a class="link" href="/logout">Logout</a>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="top">
+      <h1>My Quizzes</h1>
+      <a class="btn" href="/create-quiz">+ Create Quiz</a>
+    </div>
+
+    <div id="list">Loading...</div>
+  </div>
+
+  <script>
+    const list = document.getElementById("list");
+
+    function esc(s) {
+      const d = document.createElement("div");
+      d.textContent = s ?? "";
+      return d.innerHTML;
+    }
+
+    async function loadQuizzes() {
+      try {
+        const res = await fetch("/api/my-quizzes");
+        const data = await res.json();
+
+        if (!res.ok) {
+          list.textContent = data.error || "Something went wrong.";
+          return;
+        }
+
+        if (!data.quizzes.length) {
+          list.innerHTML = "<p>You have no quizzes yet. <a href='/create-quiz'>Create one</a>!</p>";
+          return;
+        }
+
+        list.innerHTML = data.quizzes.map(q => `
+          <div class="card">
+            <h3>${esc(q.title)}</h3>
+            <div class="meta">${esc(q.game_mode)} • ${(q.questions || []).length} question(s)</div>
+            <div style="margin-top:10px">
+              <button class="btn" onclick="toggleQs('${q.id}')">View Questions</button>
+              <button class="btn red" onclick="deleteQuiz('${q.id}')">Delete</button>
+            </div>
+            <ol class="qs" id="qs-${q.id}">
+              ${(q.questions || []).map(x => `
+                <li>${esc(x.question)}<br>
+                    <span class="meta">Answer: ${esc(x.correct_answer)}</span></li>
+              `).join("")}
+            </ol>
+          </div>
+        `).join("");
+      } catch (e) {
+        list.textContent = "Could not load quizzes.";
+      }
+    }
+
+    function toggleQs(id) {
+      const el = document.getElementById("qs-" + id);
+      el.style.display = el.style.display === "block" ? "none" : "block";
+    }
+
+    async function deleteQuiz(id) {
+      if (!confirm("Delete this quiz and all its questions?")) return;
+      const res = await fetch("/api/quizzes/" + id, { method: "DELETE" });
+      if (res.ok) loadQuizzes();
+      else alert("Could not delete the quiz.");
+    }
+
+    loadQuizzes();
+  </script>
+</body>
+</html>
+'''
 
 
 # ==========================================
@@ -211,6 +326,76 @@ def create_quiz():
         return redirect(url_for("login"))
 
     return render_template("create_quiz.html")
+
+
+# ==========================================
+# MY QUIZZES (PAGE + API)
+# ==========================================
+
+@app.route("/my-quizzes")
+def my_quizzes():
+
+    if not session.get("user_id"):
+        flash("Please log in first.", "error")
+        return redirect(url_for("login"))
+
+    # Returned as plain HTML (no Jinja processing).
+    return MY_QUIZZES_HTML
+
+
+@app.route("/api/my-quizzes")
+def api_my_quizzes():
+
+    if not session.get("user_id"):
+        return jsonify({"error": "Please log in first."}), 401
+
+    try:
+        result = (
+            supabase.table("quizzes")
+            .select("*, questions(*)")
+            .eq("host_id", session["user_id"])
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return jsonify({"quizzes": result.data or []}), 200
+
+    except Exception:
+        app.logger.exception("Load my quizzes failed")
+        return jsonify({"error": "Could not load your quizzes."}), 500
+
+
+@app.route("/api/quizzes/<quiz_id>", methods=["DELETE"])
+def api_delete_quiz(quiz_id):
+
+    if not session.get("user_id"):
+        return jsonify({"error": "Please log in first."}), 401
+
+    try:
+        # Make sure the quiz belongs to the logged-in user.
+        owned = (
+            supabase.table("quizzes")
+            .select("id")
+            .eq("id", quiz_id)
+            .eq("host_id", session["user_id"])
+            .execute()
+        )
+
+        if not owned.data:
+            return jsonify({"error": "Quiz not found."}), 404
+
+        supabase.table("questions").delete().eq(
+            "quiz_id", quiz_id
+        ).execute()
+
+        supabase.table("quizzes").delete().eq(
+            "id", quiz_id
+        ).execute()
+
+        return jsonify({"success": True}), 200
+
+    except Exception:
+        app.logger.exception("Delete quiz failed")
+        return jsonify({"error": "Could not delete the quiz."}), 500
 
 
 # ==========================================
@@ -410,13 +595,14 @@ def api_create_quiz():
                 "choices": choices
             })
 
-        # Save quiz.
+        # Save quiz (now linked to the logged-in user via host_id).
         quiz_result = (
             supabase.table("quizzes")
             .insert({
                 "title": title,
                 "description": "",
-                "game_mode": game_mode
+                "game_mode": game_mode,
+                "host_id": session["user_id"]
             })
             .execute()
         )
