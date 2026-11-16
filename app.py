@@ -229,9 +229,16 @@ function esc(s) {
 
 function medal(i) { return i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i + 1) + "."; }
 
+function teamBoard(teams) {
+  if (!teams || !teams.length) return "";
+  return "<h3>Team Standings</h3>" + teams.map((t, i) =>
+    `<div class="row"><span>${medal(i)} ${t.emoji} <b>${esc(t.name)}</b> <span class="meta">(${t.count} player${t.count === 1 ? "" : "s"})</span></span><b>${t.score}</b></div>`
+  ).join("");
+}
+
 function board(players, limit) {
   return players.slice(0, limit).map((p, i) =>
-    `<div class="row"><span>${medal(i)} ${esc(p.animal)} ${esc(p.name)}</span><b>${p.score}</b></div>`
+    `<div class="row"><span>${medal(i)} ${esc(p.animal)} ${esc(p.name)}${p.team_label ? ' <span class="meta">' + esc(p.team_label) + "</span>" : ""}</span><b>${p.score}</b></div>`
   ).join("");
 }
 
@@ -269,7 +276,7 @@ function draw(s) {
         <p>Join at <b>${esc(location.origin)}/join-game</b> using the game code</p>
         <div class="bigcode">${esc(s.code)}</div>
         <p><b>${s.player_count}</b> player(s) joined</p>
-        <div class="chips">${s.players.map(p => `<span class="chip">${esc(p.animal)} ${esc(p.name)}</span>`).join("")}</div>
+        <div class="chips">${s.players.map(p => `<span class="chip">${esc(p.animal)} ${esc(p.name)}${p.team_label ? " • " + esc(p.team_label) : ""}</span>`).join("")}</div>
         <p><button class="btn" ${s.player_count ? "" : "disabled"} onclick="act('start')">▶ Start Game</button></p>
       </div>`;
     return;
@@ -289,7 +296,7 @@ function draw(s) {
     const scrambled = q.scrambled ? `<div class="bigcode" style="font-size:42px">${esc(q.scrambled)}</div>` : "";
     const reveal = s.time_up && !q.options.length
       ? `<p class="center"><b>Correct answer:</b> <span class="good">${esc(s.correct_answer)}</span></p>` : "";
-    const lb = s.time_up ? `<h3>Leaderboard</h3>${board(s.players, 5)}` : "";
+    const lb = s.time_up ? teamBoard(s.teams) + `<h3>Leaderboard</h3>${board(s.players, 5)}` : "";
 
     app.innerHTML = `
       <div class="card">
@@ -311,6 +318,8 @@ function draw(s) {
     app.innerHTML = `
       <div class="card">
         <h2 class="center">🏁 Final Leaderboard</h2>
+        ${teamBoard(s.teams)}
+        <h3>Players</h3>
         ${board(s.players, 50) || "<p class='center'>No players.</p>"}
         <p class="center"><a class="btn" href="/leaderboard?code=${esc(s.code)}">🏆 Full Leaderboard</a> <a class="btn" href="/my-quizzes">Back to My Quizzes</a></p>
       </div>`;
@@ -369,6 +378,10 @@ JOIN_HTML = r'''<!DOCTYPE html>
     <input type="text" id="name" placeholder="Your name" maxlength="20">
     <p class="meta">Choose your animal</p>
     <div class="animals" id="animals"></div>
+    <div id="teamBox" style="display:none">
+      <p class="meta">Choose your team</p>
+      <div class="animals" id="teams"></div>
+    </div>
     <div class="err" id="err"></div>
     <button class="btn" id="go" onclick="join()">Join</button>
   </div>
@@ -390,6 +403,31 @@ box.addEventListener("click", e => {
 const params = new URLSearchParams(location.search);
 if (params.get("code")) document.getElementById("code").value = params.get("code");
 
+let team = "";
+const TEAM_LIST = [["red", "🔴 Red"], ["blue", "🔵 Blue"], ["green", "🟢 Green"], ["yellow", "🟡 Yellow"]];
+const teamsBox = document.getElementById("teams");
+teamsBox.innerHTML = TEAM_LIST.map(t =>
+  `<span class="animal" style="font-size:18px;font-weight:bold" data-t="${t[0]}">${t[1]}</span>`).join("");
+teamsBox.addEventListener("click", e => {
+  const t = e.target.dataset.t;
+  if (!t) return;
+  team = t;
+  [...teamsBox.children].forEach(c => c.classList.toggle("sel", c.dataset.t === t));
+});
+
+async function checkMode() {
+  const c = document.getElementById("code").value.trim();
+  const box = document.getElementById("teamBox");
+  if (c.length !== 6) { box.style.display = "none"; return; }
+  try {
+    const r = await fetch("/api/game-info?code=" + encodeURIComponent(c));
+    const d = await r.json();
+    box.style.display = d.found && d.mode === "team" ? "block" : "none";
+  } catch (e) {}
+}
+document.getElementById("code").addEventListener("input", checkMode);
+checkMode();
+
 async function join() {
   const err = document.getElementById("err");
   err.textContent = "";
@@ -402,7 +440,8 @@ async function join() {
       body: JSON.stringify({
         code: document.getElementById("code").value,
         name: document.getElementById("name").value,
-        animal: animal
+        animal: animal,
+        team: team
       })
     });
     const data = await res.json();
@@ -445,9 +484,16 @@ function esc(s) {
 
 function medal(i) { return i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i + 1) + "."; }
 
+function teamBoard(teams) {
+  if (!teams || !teams.length) return "";
+  return "<h3>Team Standings</h3>" + teams.map((t, i) =>
+    `<div class="row"><span>${medal(i)} ${t.emoji} <b>${esc(t.name)}</b> <span class="meta">(${t.count} player${t.count === 1 ? "" : "s"})</span></span><b>${t.score}</b></div>`
+  ).join("");
+}
+
 function board(players, limit) {
   return players.slice(0, limit).map((p, i) =>
-    `<div class="row"><span>${medal(i)} ${esc(p.animal)} ${esc(p.name)}</span><b>${p.score}</b></div>`
+    `<div class="row"><span>${medal(i)} ${esc(p.animal)} ${esc(p.name)}${p.team_label ? ' <span class="meta">' + esc(p.team_label) + "</span>" : ""}</span><b>${p.score}</b></div>`
   ).join("");
 }
 
@@ -473,7 +519,7 @@ function render() {
 }
 
 function header(me) {
-  return `<div class="row"><span>${esc(me.animal)} <b>${esc(me.name)}</b></span><span><b>${me.score}</b> pts • #${me.rank}</span></div>`;
+  return `<div class="row"><span>${esc(me.animal)} <b>${esc(me.name)}</b>${me.team_label ? " • " + esc(me.team_label) : ""}</span><span><b>${me.score}</b> pts • #${me.rank}</span></div>`;
 }
 
 function draw(s, me) {
@@ -544,6 +590,7 @@ function draw(s, me) {
       <div class="card">
         <h2 class="center">🏁 Game Over</h2>
         <p class="center">You placed <b>#${me.rank}</b> with <b>${me.score}</b> points.</p>
+        ${teamBoard(s.teams)}
         ${board(s.players, 5)}
         <p class="center"><a class="btn" href="/leaderboard?code=${esc(s.code)}">🏆 Full Leaderboard</a> <a class="btn" href="/join-game">Join another game</a></p>
       </div>`;
@@ -649,11 +696,18 @@ function render(d) {
     return;
   }
 
+  const teamHtml = (d.teams && d.teams.length)
+    ? '<div class="card"><h3>Team Standings</h3>' + d.teams.map((t, i) =>
+        `<div class="row"><span>${i + 1}. ${t.emoji} <b>${esc(t.name)}</b> <span class="meta">(${t.count} player${t.count === 1 ? "" : "s"})</span></span><b style="color:#6d28d9">${t.score} pts</b></div>`
+      ).join("") + "</div>"
+    : "";
+
   app.innerHTML = `
     <div class="center">
       <h1 style="margin-bottom:4px">🏆 Leaderboard</h1>
       <div class="meta">${esc(d.title)} • Code ${esc(d.code)} • ${status}</div>
     </div>
+    ${teamHtml}
     <div class="podium">${pod(pl[1], 2, "p2")}${pod(pl[0], 1, "p1")}${pod(pl[2], 3, "p3")}</div>
     ${pl.slice(3).map((p, i) => `
       <div class="row"><span><span class="rank">${i + 4}</span>${esc(p.animal)} <b>${esc(p.name)}</b></span><b style="color:#6d28d9">${p.score} pts</b></div>
@@ -696,6 +750,13 @@ LEADERBOARD_PAGE = build_page(LEADERBOARD_HTML, NAV_PLAYER)
 # ==========================================
 
 QUESTION_CACHE = {}
+
+TEAMS = {
+    "red": {"name": "Red", "emoji": "🔴"},
+    "blue": {"name": "Blue", "emoji": "🔵"},
+    "green": {"name": "Green", "emoji": "🟢"},
+    "yellow": {"name": "Yellow", "emoji": "🟡"}
+}
 
 
 def now_ms():
@@ -880,13 +941,51 @@ def host_game_or_error(code):
     return game, None
 
 
+def compute_teams(game, players):
+    """Adds team_label to each player and returns team totals (team mode only)."""
+
+    for player in players:
+        key = player.get("team")
+
+        if key in TEAMS:
+            player["team_label"] = (
+                TEAMS[key]["emoji"] + " " + TEAMS[key]["name"]
+            )
+        else:
+            player["team_label"] = ""
+
+    if game.get("game_mode") != "team":
+        return []
+
+    totals = {}
+
+    for player in players:
+        key = player.get("team")
+
+        if key not in TEAMS:
+            continue
+
+        team = totals.setdefault(key, {
+            "key": key,
+            "name": TEAMS[key]["name"],
+            "emoji": TEAMS[key]["emoji"],
+            "score": 0,
+            "count": 0
+        })
+
+        team["score"] += player.get("score") or 0
+        team["count"] += 1
+
+    return sorted(totals.values(), key=lambda t: -t["score"])
+
+
 def build_state(game, viewer_player_id=None):
     questions = load_questions(game)
     total = len(questions)
 
     players = (
         supabase.table("players")
-        .select("id,name,animal,score")
+        .select("id,name,animal,score,team")
         .eq("game_id", game["id"])
         .order("score", desc=True)
         .order("joined_at")
@@ -895,10 +994,14 @@ def build_state(game, viewer_player_id=None):
         or []
     )
 
+    teams = compute_teams(game, players)
+
     state = {
         "code": game["code"],
         "title": game.get("quiz_title") or "Quiz",
         "status": game["status"],
+        "game_mode": game.get("game_mode"),
+        "teams": teams,
         "total": total,
         "current_index": game["current_index"],
         "players": players,
@@ -1534,6 +1637,26 @@ def join_game():
     return JOIN_PAGE
 
 
+@app.route("/api/game-info")
+def api_game_info():
+
+    try:
+        game = get_game(request.args.get("code", ""))
+
+        if not game:
+            return jsonify({"found": False}), 200
+
+        return jsonify({
+            "found": True,
+            "mode": game.get("game_mode"),
+            "status": game["status"]
+        }), 200
+
+    except Exception:
+        app.logger.exception("Game info failed")
+        return jsonify({"found": False}), 200
+
+
 @app.route("/api/join", methods=["POST"])
 def api_join():
 
@@ -1542,6 +1665,7 @@ def api_join():
     code = str(data.get("code", "")).strip()
     name = str(data.get("name", "")).strip()[:20]
     animal = str(data.get("animal", "🦁")).strip()[:8] or "🦁"
+    team = str(data.get("team", "")).strip().lower()
 
     if not code or not name:
         return jsonify({
@@ -1573,6 +1697,14 @@ def api_join():
         if game["status"] == "finished":
             return jsonify({"error": "This game is not open yet. Ask the host to press Host Game."}), 400
 
+        is_team = game.get("game_mode") == "team"
+
+        if is_team and team not in TEAMS:
+            return jsonify({
+                "error": "Please choose a team.",
+                "need_team": True
+            }), 400
+
         taken = (
             supabase.table("players")
             .select("id")
@@ -1586,12 +1718,17 @@ def api_join():
                 "error": "That name is already taken. Try another one."
             }), 409
 
-        created = supabase.table("players").insert({
+        player_row = {
             "game_id": game["id"],
             "name": name,
             "animal": animal,
             "score": 0
-        }).execute()
+        }
+
+        if is_team:
+            player_row["team"] = team
+
+        created = supabase.table("players").insert(player_row).execute()
 
         player = created.data[0]
 
@@ -1764,7 +1901,7 @@ def api_leaderboard():
 
         players = (
             supabase.table("players")
-            .select("name,animal,score")
+            .select("name,animal,score,team")
             .eq("game_id", game["id"])
             .order("score", desc=True)
             .order("joined_at")
@@ -1773,10 +1910,14 @@ def api_leaderboard():
             or []
         )
 
+        teams = compute_teams(game, players)
+
         return jsonify({
             "title": game.get("quiz_title") or "Quiz",
             "code": game["code"],
             "status": game["status"],
+            "game_mode": game.get("game_mode"),
+            "teams": teams,
             "players": players
         }), 200
 
