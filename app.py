@@ -1170,6 +1170,50 @@ JOIN_CODE_BANNER = r'''
 '''
 
 
+TF_SELECT_SCRIPT = r'''
+<script>
+(function () {
+  function enhance(inp) {
+    if (inp.dataset.tfDone) return;
+    inp.dataset.tfDone = "1";
+
+    var sel = document.createElement("select");
+    sel.className = inp.className;
+    sel.setAttribute("aria-label", "Correct answer");
+    sel.innerHTML =
+      '<option value="">Select True or False</option>' +
+      '<option value="True">True</option>' +
+      '<option value="False">False</option>';
+
+    var v = (inp.value || "").trim().toLowerCase();
+    sel.value = v === "true" ? "True" : v === "false" ? "False" : "";
+
+    if (inp.required) { inp.required = false; sel.required = true; }
+
+    sel.addEventListener("change", function () {
+      inp.value = sel.value;
+      inp.dispatchEvent(new Event("input", { bubbles: true }));
+      inp.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    inp.style.display = "none";
+    inp.parentNode.insertBefore(sel, inp.nextSibling);
+  }
+
+  function scan() {
+    document.querySelectorAll("input").forEach(function (i) {
+      if ((i.placeholder || "").toLowerCase().indexOf("true or false") !== -1) enhance(i);
+    });
+  }
+
+  new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
+  document.addEventListener("DOMContentLoaded", scan);
+  scan();
+})();
+</script>
+'''
+
+
 def add_join_code_banner(html, code):
     banner = JOIN_CODE_BANNER.replace("__CODE__", code)
 
@@ -1360,6 +1404,12 @@ def create_quiz():
         app.logger.exception(
             "Could not show the game code (is quizzes.join_code created?)"
         )
+
+    # Turn the "Type True or False" box into a True/False dropdown.
+    if "</body>" in html:
+        html = html.replace("</body>", TF_SELECT_SCRIPT + "</body>", 1)
+    else:
+        html += TF_SELECT_SCRIPT
 
     return html
 
