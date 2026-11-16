@@ -312,7 +312,7 @@ function draw(s) {
       <div class="card">
         <h2 class="center">🏁 Final Leaderboard</h2>
         ${board(s.players, 50) || "<p class='center'>No players.</p>"}
-        <p class="center"><a class="btn" href="/my-quizzes">Back to My Quizzes</a></p>
+        <p class="center"><a class="btn" href="/leaderboard?code=${esc(s.code)}">🏆 Full Leaderboard</a> <a class="btn" href="/my-quizzes">Back to My Quizzes</a></p>
       </div>`;
   }
 }
@@ -545,7 +545,7 @@ function draw(s, me) {
         <h2 class="center">🏁 Game Over</h2>
         <p class="center">You placed <b>#${me.rank}</b> with <b>${me.score}</b> points.</p>
         ${board(s.players, 5)}
-        <p class="center"><a class="btn" href="/join-game">Join another game</a></p>
+        <p class="center"><a class="btn" href="/leaderboard?code=${esc(s.code)}">🏆 Full Leaderboard</a> <a class="btn" href="/join-game">Join another game</a></p>
       </div>`;
   }
 }
@@ -596,6 +596,90 @@ poll();
 '''
 
 
+LEADERBOARD_HTML = r'''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuizUp - Leaderboard</title>
+<style>/*BASE_CSS*/
+.podium{display:flex;gap:14px;justify-content:center;align-items:flex-end;margin:24px 0}
+.pod{flex:1;max-width:240px;background:#fff;border-radius:20px;padding:18px 10px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.pod .av{font-size:54px}
+.pod .nm{font-weight:bold;font-size:20px;word-break:break-word}
+.pod .sc{font-size:34px;font-weight:bold;color:#6d28d9}
+.p1{padding-top:40px;padding-bottom:40px;border:2px solid #c4b5fd}
+.p3{padding-top:12px;padding-bottom:12px}
+.rank{background:#ede9fe;border-radius:10px;padding:6px 12px;font-weight:bold;margin-right:12px}
+</style>
+</head>
+<body>
+/*NAV*/
+<div class="wrap" id="app">Loading...</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const code = params.get("code") || "";
+const app = document.getElementById("app");
+
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = s ?? "";
+  return d.innerHTML;
+}
+
+function pod(p, rank, cls) {
+  if (!p) return "";
+  const icon = rank === 1 ? "🏆" : rank === 2 ? "🥈" : "🥉";
+  return `<div class="pod ${cls}">
+    <div style="font-size:26px">${icon}</div>
+    <div class="av">${esc(p.animal)}</div>
+    <div class="nm">${esc(p.name)}</div>
+    <div class="sc">${p.score}</div>
+    ${rank === 1 ? '<div class="meta">WINNER</div>' : ""}
+  </div>`;
+}
+
+function render(d) {
+  const pl = d.players;
+  const status = d.status === "finished" ? "Final results" : d.status === "active" ? "Game in progress" : "Waiting to start";
+
+  if (!pl.length) {
+    app.innerHTML = `<div class="card center"><h1>🏆 Leaderboard</h1><p class="meta">${esc(d.title)}</p><p>No players yet.</p></div>`;
+    return;
+  }
+
+  app.innerHTML = `
+    <div class="center">
+      <h1 style="margin-bottom:4px">🏆 Leaderboard</h1>
+      <div class="meta">${esc(d.title)} • Code ${esc(d.code)} • ${status}</div>
+    </div>
+    <div class="podium">${pod(pl[1], 2, "p2")}${pod(pl[0], 1, "p1")}${pod(pl[2], 3, "p3")}</div>
+    ${pl.slice(3).map((p, i) => `
+      <div class="row"><span><span class="rank">${i + 4}</span>${esc(p.animal)} <b>${esc(p.name)}</b></span><b style="color:#6d28d9">${p.score} pts</b></div>
+    `).join("")}`;
+}
+
+async function load() {
+  try {
+    const res = await fetch("/api/leaderboard" + (code ? "?code=" + encodeURIComponent(code) : ""));
+    const d = await res.json();
+    if (!res.ok) {
+      app.innerHTML = '<div class="card center">' + esc(d.error || "No leaderboard yet.") + "</div>";
+      return;
+    }
+    render(d);
+  } catch (e) {}
+}
+
+setInterval(load, 3000);
+load();
+</script>
+</body>
+</html>
+'''
+
+
 def build_page(html, nav):
     return html.replace("/*BASE_CSS*/", BASE_CSS).replace("/*NAV*/", nav)
 
@@ -604,6 +688,7 @@ MY_QUIZZES_PAGE = build_page(MY_QUIZZES_HTML, NAV_HOST)
 HOST_PAGE = build_page(HOST_HTML, NAV_HOST)
 JOIN_PAGE = build_page(JOIN_HTML, NAV_PLAYER)
 PLAY_PAGE = build_page(PLAY_HTML, NAV_PLAYER)
+LEADERBOARD_PAGE = build_page(LEADERBOARD_HTML, NAV_PLAYER)
 
 
 # ==========================================
@@ -1467,6 +1552,22 @@ def api_join():
         game = get_game(code)
 
         if not game:
+            quiz_check = (
+                supabase.table("quizzes")
+                .select("id")
+                .eq("join_code", code)
+                .limit(1)
+                .execute()
+            )
+
+            if quiz_check.data:
+                return jsonify({
+                    "error": (
+                        "This quiz is not open yet. Ask the host to "
+                        "press Host Game in My Quizzes first."
+                    )
+                }), 404
+
             return jsonify({"error": "Game code not found."}), 404
 
         if game["status"] == "finished":
@@ -1627,7 +1728,61 @@ def api_play_answer():
 
 @app.route("/leaderboard")
 def leaderboard():
-    return render_template("leaderboard.html")
+    return LEADERBOARD_PAGE
+
+
+@app.route("/api/leaderboard")
+def api_leaderboard():
+
+    try:
+        code = request.args.get("code", "").strip()
+        game = None
+
+        if code:
+            game = get_game(code)
+        elif session.get("user_id"):
+            result = (
+                supabase.table("games")
+                .select("*")
+                .eq("host_id", session["user_id"])
+                .order("created_at", desc=True)
+                .limit(1)
+                .execute()
+            )
+            game = result.data[0] if result.data else None
+
+        if not game and session.get("player_game_id"):
+            game = get_game_by_id(session["player_game_id"])
+
+        if not game:
+            return jsonify({
+                "error": (
+                    "No game found yet. Play a game first, or open "
+                    "/leaderboard?code=YOUR-GAME-CODE."
+                )
+            }), 404
+
+        players = (
+            supabase.table("players")
+            .select("name,animal,score")
+            .eq("game_id", game["id"])
+            .order("score", desc=True)
+            .order("joined_at")
+            .execute()
+            .data
+            or []
+        )
+
+        return jsonify({
+            "title": game.get("quiz_title") or "Quiz",
+            "code": game["code"],
+            "status": game["status"],
+            "players": players
+        }), 200
+
+    except Exception:
+        app.logger.exception("Leaderboard failed")
+        return jsonify({"error": "Could not load the leaderboard."}), 500
 
 
 # ==========================================
