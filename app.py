@@ -157,6 +157,7 @@ async function loadQuizzes() {
       <div class="card">
         <h3>${esc(q.title)}</h3>
         <div class="meta">${esc(q.game_mode)} • ${(q.questions || []).length} question(s)</div>
+        <div style="margin-top:8px">Game Code: <b style="color:#6d28d9;letter-spacing:3px;font-size:20px">${esc(q.join_code || "")}</b></div>
         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn small" onclick="hostGame('${q.id}')" ${(q.questions || []).length ? "" : "disabled"}>▶ Host Game</button>
           <button class="btn small" onclick="toggleQs('${q.id}')">View Questions</button>
@@ -724,11 +725,62 @@ def get_game(code):
         supabase.table("games")
         .select("*")
         .eq("code", code)
+        .order("created_at", desc=True)
         .limit(1)
         .execute()
     )
 
     return result.data[0] if result.data else None
+
+
+def get_game_by_id(game_id):
+
+    if not game_id:
+        return None
+
+    result = (
+        supabase.table("games")
+        .select("*")
+        .eq("id", game_id)
+        .limit(1)
+        .execute()
+    )
+
+    return result.data[0] if result.data else None
+
+
+def join_code_taken(code):
+    result = (
+        supabase.table("quizzes")
+        .select("id")
+        .eq("join_code", code)
+        .limit(1)
+        .execute()
+    )
+
+    return bool(result.data)
+
+
+def generate_join_code():
+    for _ in range(30):
+        candidate = "".join(random.choices(string.digits, k=6))
+
+        if not join_code_taken(candidate):
+            return candidate
+
+    raise RuntimeError("Could not generate a unique game code.")
+
+
+def get_pending_join_code():
+    """The code shown on the Create Quiz page; it is given to the next saved quiz."""
+
+    code = session.get("pending_join_code")
+
+    if not code or join_code_taken(code):
+        code = generate_join_code()
+        session["pending_join_code"] = code
+
+    return code
 
 
 def host_game_or_error(code):
@@ -884,6 +936,68 @@ def add_my_quizzes_link(html):
         return html.replace("</body>", floating + "</body>", 1)
 
     return html + floating
+
+
+JOIN_CODE_BANNER = r'''
+<div id="join-code-banner" style="background:#ede9fe;border:2px dashed #6d28d9;border-radius:16px;padding:14px 18px;margin:16px 0;">
+  <div id="jc-label" style="font-size:13px;color:#4c1d95;font-weight:bold;letter-spacing:1px">YOUR GAME CODE</div>
+  <div id="jc-code" style="font-size:40px;letter-spacing:8px;font-weight:bold;color:#6d28d9">__CODE__</div>
+  <div id="jc-note" style="font-size:14px;color:#555">Players type this code in Join Game to play this quiz. Save the quiz, then press Host Game in My Quizzes to open the game.</div>
+</div>
+<script>
+(function () {
+  var label = document.getElementById("jc-label");
+  var codeEl = document.getElementById("jc-code");
+  var note = document.getElementById("jc-note");
+  var orig = window.fetch.bind(window);
+
+  window.fetch = async function (input, init) {
+    var res = await orig(input, init);
+    try {
+      var url = typeof input === "string" ? input : ((input && input.url) || "");
+      if (url.indexOf("/api/create-quiz") !== -1 && res.ok) {
+        var data = await res.clone().json();
+        if (data.join_code) {
+          label.textContent = "QUIZ SAVED - GAME CODE";
+          codeEl.textContent = data.join_code;
+          note.textContent = "Open My Quizzes and press Host Game. Players join with this code.";
+          setTimeout(async function () {
+            try {
+              var r = await orig("/api/new-join-code");
+              var d = await r.json();
+              if (d.code) {
+                label.textContent = "GAME CODE FOR YOUR NEXT QUIZ";
+                codeEl.textContent = d.code;
+                note.textContent = "Players type this code in Join Game to play the next quiz you save.";
+              }
+            } catch (e) {}
+          }, 6000);
+        }
+      }
+    } catch (e) {}
+    return res;
+  };
+})();
+</script>
+'''
+
+
+def add_join_code_banner(html, code):
+    banner = JOIN_CODE_BANNER.replace("__CODE__", code)
+
+    if re.search(r"</h1>", html, re.IGNORECASE):
+        return re.sub(
+            r"</h1>", lambda m: m.group(0) + banner, html,
+            count=1, flags=re.IGNORECASE
+        )
+
+    if re.search(r"<body[^>]*>", html, re.IGNORECASE):
+        return re.sub(
+            r"<body[^>]*>", lambda m: m.group(0) + banner, html,
+            count=1, flags=re.IGNORECASE
+        )
+
+    return banner + html
 
 
 # ==========================================
@@ -1050,7 +1164,29 @@ def create_quiz():
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
-    return render_template("create_quiz.html")
+    html = render_template("create_quiz.html")
+
+    try:
+        html = add_join_code_banner(html, get_pending_join_code())
+    except Exception:
+        app.logger.exception(
+            "Could not show the game code (is quizzes.join_code created?)"
+        )
+
+    return html
+
+
+@app.route("/api/new-join-code")
+def api_new_join_code():
+
+    if not session.get("user_id"):
+        return jsonify({"error": "Please log in first."}), 401
+
+    try:
+        return jsonify({"code": get_pending_join_code()}), 200
+    except Exception:
+        app.logger.exception("New join code failed")
+        return jsonify({"error": "Could not get a code."}), 500
 
 
 # ==========================================
@@ -1081,7 +1217,19 @@ def api_my_quizzes():
             .order("created_at", desc=True)
             .execute()
         )
-        return jsonify({"quizzes": result.data or []}), 200
+        quizzes = result.data or []
+
+        for quiz in quizzes:
+            if not quiz.get("join_code"):
+                code = generate_join_code()
+
+                supabase.table("quizzes").update({
+                    "join_code": code
+                }).eq("id", quiz["id"]).execute()
+
+                quiz["join_code"] = code
+
+        return jsonify({"quizzes": quizzes}), 200
 
     except Exception:
         app.logger.exception("Load my quizzes failed")
@@ -1106,6 +1254,13 @@ def api_delete_quiz(quiz_id):
 
         if not owned.data:
             return jsonify({"error": "Quiz not found."}), 404
+
+        try:
+            supabase.table("games").delete().eq(
+                "quiz_id", str(quiz_id)
+            ).execute()
+        except Exception:
+            app.logger.exception("Could not delete games of quiz")
 
         supabase.table("questions").delete().eq(
             "quiz_id", quiz_id
@@ -1135,7 +1290,7 @@ def api_host_game(quiz_id):
     try:
         quiz_result = (
             supabase.table("quizzes")
-            .select("id,title,game_mode")
+            .select("id,title,game_mode,join_code")
             .eq("id", quiz_id)
             .eq("host_id", session["user_id"])
             .execute()
@@ -1159,19 +1314,24 @@ def api_host_game(quiz_id):
                 "error": "This quiz has no questions."
             }), 400
 
-        code = None
-
-        for _ in range(15):
-            candidate = "".join(random.choices(string.digits, k=6))
-
-            if not get_game(candidate):
-                code = candidate
-                break
+        code = quiz.get("join_code")
 
         if not code:
-            return jsonify({
-                "error": "Could not generate a game code. Try again."
-            }), 500
+            code = generate_join_code()
+
+            supabase.table("quizzes").update({
+                "join_code": code
+            }).eq("id", quiz["id"]).execute()
+
+        # Reuse the open lobby/game if this host already opened one.
+        existing = get_game(code)
+
+        if (
+            existing
+            and existing["host_id"] == session["user_id"]
+            and existing["status"] in ("lobby", "active")
+        ):
+            return jsonify({"success": True, "code": code}), 200
 
         supabase.table("games").insert({
             "code": code,
@@ -1310,7 +1470,7 @@ def api_join():
             return jsonify({"error": "Game code not found."}), 404
 
         if game["status"] == "finished":
-            return jsonify({"error": "This game has already ended."}), 400
+            return jsonify({"error": "This game is not open yet. Ask the host to press Host Game."}), 400
 
         taken = (
             supabase.table("players")
@@ -1335,7 +1495,7 @@ def api_join():
         player = created.data[0]
 
         session["player_id"] = str(player["id"])
-        session["player_game"] = game["code"]
+        session["player_game_id"] = str(game["id"])
 
         return jsonify({"success": True}), 201
 
@@ -1347,7 +1507,7 @@ def api_join():
 @app.route("/play")
 def play():
 
-    if not session.get("player_id") or not session.get("player_game"):
+    if not session.get("player_id") or not session.get("player_game_id"):
         return redirect(url_for("join_game"))
 
     return PLAY_PAGE
@@ -1357,13 +1517,13 @@ def play():
 def api_play_state():
 
     player_id = session.get("player_id")
-    code = session.get("player_game")
+    game_id = session.get("player_game_id")
 
-    if not player_id or not code:
+    if not player_id or not game_id:
         return jsonify({"error": "Not in a game."}), 401
 
     try:
-        game = get_game(code)
+        game = get_game_by_id(game_id)
 
         if not game:
             return jsonify({"error": "Game not found."}), 404
@@ -1384,13 +1544,13 @@ def api_play_state():
 def api_play_answer():
 
     player_id = session.get("player_id")
-    code = session.get("player_game")
+    game_id = session.get("player_game_id")
 
-    if not player_id or not code:
+    if not player_id or not game_id:
         return jsonify({"error": "Not in a game."}), 401
 
     try:
-        game = get_game(code)
+        game = get_game_by_id(game_id)
 
         if not game or game["status"] != "active":
             return jsonify({"error": "No active question."}), 400
@@ -1640,6 +1800,12 @@ def api_create_quiz():
                 "choices": choices
             })
 
+        # Use the code shown on the Create Quiz page.
+        join_code = session.get("pending_join_code")
+
+        if not join_code or join_code_taken(join_code):
+            join_code = generate_join_code()
+
         # Save quiz (linked to the logged-in user via host_id).
         quiz_result = (
             supabase.table("quizzes")
@@ -1647,7 +1813,8 @@ def api_create_quiz():
                 "title": title,
                 "description": "",
                 "game_mode": game_mode,
-                "host_id": session["user_id"]
+                "host_id": session["user_id"],
+                "join_code": join_code
             })
             .execute()
         )
@@ -1656,6 +1823,7 @@ def api_create_quiz():
             raise RuntimeError("Quiz was not returned after insertion.")
 
         quiz_id = quiz_result.data[0]["id"]
+        session.pop("pending_join_code", None)
 
         # Link every question to its quiz.
         for row in question_rows:
@@ -1669,7 +1837,8 @@ def api_create_quiz():
         return jsonify({
             "success": True,
             "message": "Quiz created successfully!",
-            "quiz_id": quiz_id
+            "quiz_id": quiz_id,
+            "join_code": join_code
         }), 201
 
     except ValueError as error:
