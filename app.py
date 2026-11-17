@@ -744,6 +744,121 @@ load();
 '''
 
 
+REPORTS_HTML = r'''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuizUp - Reports</title>
+<style>/*BASE_CSS*/
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:14px 0}
+.stat{background:var(--card);border-radius:18px;padding:20px;box-shadow:0 2px 12px var(--shadow);text-align:center}
+.stat .num{font-size:36px;font-weight:bold;color:var(--accent)}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{padding:10px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+th{color:var(--muted);font-size:13px;text-transform:uppercase}
+.pbar{height:10px;background:var(--bar);border-radius:99px;overflow:hidden;margin-top:6px}
+.pbar>div{height:100%;border-radius:99px}
+.qrow{padding:12px 0;border-bottom:1px solid var(--border)}
+.qrow:last-child{border-bottom:0}
+</style>
+</head>
+<body>
+/*NAV*/
+<div class="wrap" id="app">Loading...</div>
+
+<script>
+const app = document.getElementById("app");
+
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = s ?? "";
+  return d.innerHTML;
+}
+
+const STATUS = { lobby: "Waiting", active: "In progress", finished: "Finished" };
+
+function render(d) {
+  const head = `
+    <div class="center">
+      <div class="meta" style="letter-spacing:2px;font-weight:bold">ANALYTICS</div>
+      <h1 style="margin:4px 0">Reports &amp; Assessment 📊</h1>
+      <div class="meta">Analyze the performance of your players.</div>
+    </div>`;
+
+  if (!d.total_games) {
+    app.innerHTML = head + `<div class="card"><h3>Quiz Performance</h3><p class="meta">Reports will appear here after players complete a QuizUp game.</p></div>`;
+    return;
+  }
+
+  const stats = `
+    <div class="stats">
+      <div class="stat"><div>👥 Total Players</div><div class="num">${d.total_players}</div></div>
+      <div class="stat"><div>🎯 Average Score</div><div class="num">${d.average_score}</div></div>
+      <div class="stat"><div>✅ Accuracy</div><div class="num">${d.accuracy}%</div></div>
+      <div class="stat"><div>🎮 Games Hosted</div><div class="num">${d.total_games}</div></div>
+    </div>`;
+
+  const rows = d.games.map(g => `
+    <tr>
+      <td><b>${esc(g.title)}</b></td>
+      <td>${esc(g.code)}</td>
+      <td>${esc(new Date(g.created_at).toLocaleDateString())}</td>
+      <td>${esc(STATUS[g.status] || g.status)}</td>
+      <td>${g.players}</td>
+      <td>${g.avg_score}</td>
+      <td>${g.accuracy}%</td>
+    </tr>`).join("");
+
+  const perf = `
+    <div class="card">
+      <h3>Quiz Performance</h3>
+      <div class="tablewrap"><table>
+        <tr><th>Quiz</th><th>Code</th><th>Date</th><th>Status</th><th>Players</th><th>Avg score</th><th>Accuracy</th></tr>
+        ${rows}
+      </table></div>
+    </div>`;
+
+  const diff = d.difficult.length
+    ? d.difficult.map(q => `
+        <div class="qrow">
+          <div><b>${esc(q.text)}</b></div>
+          <div class="meta">${esc(q.quiz_title)} • ${q.correct} of ${q.answered} answered correctly (${q.percent}%)</div>
+          <div class="pbar"><div style="width:${q.percent}%;background:${q.percent < 40 ? "#dc2626" : q.percent < 70 ? "#d97706" : "#16a34a"}"></div></div>
+        </div>`).join("")
+    : '<p class="meta">No answers recorded yet.</p>';
+
+  app.innerHTML = head + stats + perf + `
+    <div class="card">
+      <h3>❓ Difficult Questions</h3>
+      <p class="meta">Questions that the fewest players answered correctly.</p>
+      ${diff}
+    </div>`;
+}
+
+async function load() {
+  try {
+    const res = await fetch("/api/reports");
+    const d = await res.json();
+    if (res.status === 401) { location.href = "/login"; return; }
+    if (!res.ok) {
+      app.innerHTML = '<div class="card center">' + esc(d.error || "Could not load reports.") + "</div>";
+      return;
+    }
+    render(d);
+  } catch (e) {
+    app.innerHTML = '<div class="card center">Could not load reports.</div>';
+  }
+}
+
+load();
+</script>
+</body>
+</html>
+'''
+
+
 THEME_BTN_CSS = r'''#theme-toggle{position:fixed;right:20px;bottom:20px;z-index:99999;border:0;border-radius:999px;padding:12px 18px;font-size:16px;font-weight:bold;cursor:pointer;background:#6d28d9;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.25)}'''
 
 THEME_FILTER_CSS = r'''html.dark{filter:invert(1) hue-rotate(180deg);background:#fff}
@@ -819,6 +934,7 @@ HOST_PAGE = build_page(HOST_HTML, NAV_HOST)
 JOIN_PAGE = build_page(JOIN_HTML, NAV_PLAYER)
 PLAY_PAGE = build_page(PLAY_HTML, NAV_PLAYER)
 LEADERBOARD_PAGE = build_page(LEADERBOARD_HTML, NAV_PLAYER)
+REPORTS_PAGE = build_page(REPORTS_HTML, NAV_HOST)
 
 
 # ==========================================
@@ -2086,7 +2202,164 @@ def reports():
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
-    return render_template("reports.html")
+    return REPORTS_PAGE
+
+
+def fetch_all_for_games(table, columns, game_ids):
+    """Reads every row for the given games (Supabase returns 1000 rows per request)."""
+
+    rows = []
+
+    for i in range(0, len(game_ids), 40):
+        chunk = game_ids[i:i + 40]
+        start = 0
+
+        while True:
+            result = (
+                supabase.table(table)
+                .select(columns)
+                .in_("game_id", chunk)
+                .range(start, start + 999)
+                .execute()
+            )
+
+            data = result.data or []
+            rows.extend(data)
+
+            if len(data) < 1000:
+                break
+
+            start += 1000
+
+    return rows
+
+
+@app.route("/api/reports")
+def api_reports():
+
+    if not session.get("user_id"):
+        return jsonify({"error": "Please log in first."}), 401
+
+    try:
+        games = (
+            supabase.table("games")
+            .select("*")
+            .eq("host_id", session["user_id"])
+            .order("created_at", desc=True)
+            .limit(200)
+            .execute()
+            .data
+            or []
+        )
+
+        empty = {
+            "total_games": 0,
+            "total_players": 0,
+            "average_score": 0,
+            "accuracy": 0,
+            "games": [],
+            "difficult": []
+        }
+
+        if not games:
+            return jsonify(empty), 200
+
+        game_ids = [g["id"] for g in games]
+
+        players = fetch_all_for_games("players", "id,game_id,score", game_ids)
+        answers = fetch_all_for_games(
+            "answers", "game_id,question_index,is_correct", game_ids
+        )
+
+        players_by_game = {}
+        for player in players:
+            players_by_game.setdefault(player["game_id"], []).append(player)
+
+        answers_by_game = {}
+        for answer in answers:
+            answers_by_game.setdefault(answer["game_id"], []).append(answer)
+
+        def percent(part, whole):
+            return round(part * 100 / whole) if whole else 0
+
+        game_rows = []
+        per_question = {}
+
+        for game in games:
+            game_players = players_by_game.get(game["id"], [])
+            game_answers = answers_by_game.get(game["id"], [])
+
+            correct = sum(1 for a in game_answers if a["is_correct"])
+            total_score = sum((p["score"] or 0) for p in game_players)
+
+            game_rows.append({
+                "title": game.get("quiz_title") or "Quiz",
+                "code": game["code"],
+                "status": game["status"],
+                "created_at": game.get("created_at"),
+                "players": len(game_players),
+                "avg_score": (
+                    round(total_score / len(game_players))
+                    if game_players else 0
+                ),
+                "accuracy": percent(correct, len(game_answers))
+            })
+
+            for answer in game_answers:
+                key = (game["quiz_id"], answer["question_index"])
+
+                stat = per_question.setdefault(key, {
+                    "answered": 0,
+                    "correct": 0,
+                    "game": game
+                })
+
+                stat["answered"] += 1
+
+                if answer["is_correct"]:
+                    stat["correct"] += 1
+
+        ranked = sorted(
+            per_question.items(),
+            key=lambda item: (
+                item[1]["correct"] / item[1]["answered"],
+                -item[1]["answered"]
+            )
+        )[:5]
+
+        difficult = []
+
+        for (quiz_id, index), stat in ranked:
+            questions = load_questions(stat["game"])
+
+            if not 0 <= index < len(questions):
+                continue
+
+            difficult.append({
+                "text": questions[index]["text"],
+                "quiz_title": stat["game"].get("quiz_title") or "Quiz",
+                "answered": stat["answered"],
+                "correct": stat["correct"],
+                "percent": percent(stat["correct"], stat["answered"])
+            })
+
+        total_correct = sum(1 for a in answers if a["is_correct"])
+        total_score_all = sum((p["score"] or 0) for p in players)
+
+        return jsonify({
+            "total_games": len(games),
+            "total_players": len(players),
+            "average_score": (
+                round(total_score_all / len(players)) if players else 0
+            ),
+            "accuracy": percent(total_correct, len(answers)),
+            "games": game_rows[:15],
+            "difficult": difficult
+        }), 200
+
+    except Exception:
+        app.logger.exception("Reports failed")
+        return jsonify({"error": "Could not load the reports."}), 500
 
 
 # ==========================================
