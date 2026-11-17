@@ -57,37 +57,40 @@ supabase: Client = create_client(
 # ==========================================
 
 BASE_CSS = r'''
+:root{--bg:#f4f3ff;--text:#1e1b3a;--card:#fff;--row:#f5f3ff;--chip:#ede9fe;--muted:#666;--border:#ddd6fe;--shadow:rgba(0,0,0,.07);--bar:#e5e7eb;--accent:#6d28d9;--good:#16a34a;--bad:#dc2626;--redbg:#fee2e2;--redtx:#b91c1c}
+html.dark{color-scheme:dark;--bg:#0f0d1f;--text:#ece9ff;--card:#1b1833;--row:#262244;--chip:#2e2858;--muted:#a09cc0;--border:#3b3470;--shadow:rgba(0,0,0,.5);--bar:#2e2a50;--accent:#a78bfa;--good:#4ade80;--bad:#f87171;--redbg:#4c1d1d;--redtx:#fca5a5}
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f3ff;color:#1e1b3a}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+a{color:var(--accent)}
 .nav{background:linear-gradient(90deg,#5b3fd6,#3b82f6);padding:16px 28px;display:flex;justify-content:space-between;align-items:center}
 .nav .brand{color:#fff;font-size:22px;font-weight:bold;text-decoration:none}
 .nav a.link{color:#fff;text-decoration:none;margin-left:18px;font-weight:bold;font-size:14px}
 .wrap{max-width:900px;margin:24px auto;padding:0 16px}
-.card{background:#fff;border-radius:18px;padding:22px;margin:14px 0;box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.card{background:var(--card);border-radius:18px;padding:22px;margin:14px 0;box-shadow:0 2px 12px var(--shadow)}
 .card h2,.card h3{margin-top:0}
-.meta{color:#666;font-size:14px}
+.meta{color:var(--muted);font-size:14px}
 .center{text-align:center}
 .btn{border:0;border-radius:12px;padding:12px 20px;cursor:pointer;background:#6d28d9;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;display:inline-block}
 .btn:disabled{opacity:.5;cursor:not-allowed}
-.btn.red{background:#fee2e2;color:#b91c1c}
+.btn.red{background:var(--redbg);color:var(--redtx)}
 .btn.small{padding:8px 14px;font-size:14px;border-radius:10px}
-.bigcode{font-size:64px;letter-spacing:10px;font-weight:bold;color:#6d28d9}
+.bigcode{font-size:64px;letter-spacing:10px;font-weight:bold;color:var(--accent)}
 .chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
-.chip{background:#ede9fe;border-radius:999px;padding:8px 14px;font-weight:bold}
+.chip{background:var(--chip);border-radius:999px;padding:8px 14px;font-weight:bold}
 .opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
 .opt{border:0;border-radius:14px;padding:22px 12px;font-size:18px;font-weight:bold;color:#fff;text-align:center;cursor:pointer}
 .opt:disabled{opacity:.5;cursor:not-allowed}
 .o0{background:#e11d48}.o1{background:#2563eb}.o2{background:#d97706}.o3{background:#16a34a}
-.timer{font-size:32px;font-weight:bold;color:#6d28d9}
-.bar{height:10px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin:8px 0 14px}
-.bar>div{height:100%;background:#6d28d9;width:100%}
-.row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:12px;background:#f5f3ff;margin:6px 0}
-.good{color:#16a34a}.bad{color:#dc2626}
-input[type=text]{width:100%;padding:14px;border:2px solid #ddd6fe;border-radius:12px;font-size:18px;margin:8px 0}
+.timer{font-size:32px;font-weight:bold;color:var(--accent)}
+.bar{height:10px;background:var(--bar);border-radius:99px;overflow:hidden;margin:8px 0 14px}
+.bar>div{height:100%;background:var(--accent);width:100%}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:12px;background:var(--row);margin:6px 0}
+.good{color:var(--good)}.bad{color:var(--bad)}
+input[type=text]{width:100%;padding:14px;border:2px solid var(--border);border-radius:12px;font-size:18px;margin:8px 0;background:var(--card);color:var(--text)}
 .animals{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}
-.animal{font-size:30px;background:#f5f3ff;border:3px solid transparent;border-radius:14px;padding:6px 10px;cursor:pointer}
-.animal.sel{border-color:#6d28d9;background:#ede9fe}
-.err{color:#b91c1c;font-weight:bold;min-height:22px}
+.animal{font-size:30px;background:var(--row);border:3px solid transparent;border-radius:14px;padding:6px 10px;cursor:pointer}
+.animal.sel{border-color:var(--accent);background:var(--chip)}
+.err{color:var(--redtx);font-weight:bold;min-height:22px}
 @media(max-width:520px){.opts{grid-template-columns:1fr}.bigcode{font-size:44px}}
 '''
 
@@ -157,7 +160,7 @@ async function loadQuizzes() {
       <div class="card">
         <h3>${esc(q.title)}</h3>
         <div class="meta">${esc(q.game_mode)} • ${(q.questions || []).length} question(s)</div>
-        <div style="margin-top:8px">Game Code: <b style="color:#6d28d9;letter-spacing:3px;font-size:20px">${esc(q.join_code || "")}</b></div>
+        <div style="margin-top:8px">Game Code: <b style="color:var(--accent);letter-spacing:3px;font-size:20px">${esc(q.join_code || "")}</b></div>
         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn small" onclick="hostGame('${q.id}')" ${(q.questions || []).length ? "" : "disabled"}>▶ Host Game</button>
           <button class="btn small" onclick="toggleQs('${q.id}')">View Questions</button>
@@ -425,7 +428,8 @@ async function checkMode() {
     box.style.display = d.found && d.mode === "team" ? "block" : "none";
   } catch (e) {}
 }
-document.getElementById("code").addEventListener("input", checkMode);
+["input", "keyup", "change", "blur"].forEach(ev =>
+  document.getElementById("code").addEventListener(ev, checkMode));
 checkMode();
 
 async function join() {
@@ -446,6 +450,12 @@ async function join() {
     });
     const data = await res.json();
     if (res.ok) { location.href = "/play"; return; }
+    if (data.need_team) {
+      document.getElementById("teamBox").style.display = "block";
+      err.textContent = "Please choose your team below, then press Join.";
+      btn.disabled = false;
+      return;
+    }
     err.textContent = data.error || "Could not join.";
   } catch (e) {
     err.textContent = "Could not join. Try again.";
@@ -651,13 +661,13 @@ LEADERBOARD_HTML = r'''<!DOCTYPE html>
 <title>QuizUp - Leaderboard</title>
 <style>/*BASE_CSS*/
 .podium{display:flex;gap:14px;justify-content:center;align-items:flex-end;margin:24px 0}
-.pod{flex:1;max-width:240px;background:#fff;border-radius:20px;padding:18px 10px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.pod{flex:1;max-width:240px;background:var(--card);border-radius:20px;padding:18px 10px;text-align:center;box-shadow:0 4px 16px var(--shadow)}
 .pod .av{font-size:54px}
 .pod .nm{font-weight:bold;font-size:20px;word-break:break-word}
-.pod .sc{font-size:34px;font-weight:bold;color:#6d28d9}
+.pod .sc{font-size:34px;font-weight:bold;color:var(--accent)}
 .p1{padding-top:40px;padding-bottom:40px;border:2px solid #c4b5fd}
 .p3{padding-top:12px;padding-bottom:12px}
-.rank{background:#ede9fe;border-radius:10px;padding:6px 12px;font-weight:bold;margin-right:12px}
+.rank{background:var(--chip);border-radius:10px;padding:6px 12px;font-weight:bold;margin-right:12px}
 </style>
 </head>
 <body>
@@ -698,7 +708,7 @@ function render(d) {
 
   const teamHtml = (d.teams && d.teams.length)
     ? '<div class="card"><h3>Team Standings</h3>' + d.teams.map((t, i) =>
-        `<div class="row"><span>${i + 1}. ${t.emoji} <b>${esc(t.name)}</b> <span class="meta">(${t.count} player${t.count === 1 ? "" : "s"})</span></span><b style="color:#6d28d9">${t.score} pts</b></div>`
+        `<div class="row"><span>${i + 1}. ${t.emoji} <b>${esc(t.name)}</b> <span class="meta">(${t.count} player${t.count === 1 ? "" : "s"})</span></span><b style="color:var(--accent)">${t.score} pts</b></div>`
       ).join("") + "</div>"
     : "";
 
@@ -710,7 +720,7 @@ function render(d) {
     ${teamHtml}
     <div class="podium">${pod(pl[1], 2, "p2")}${pod(pl[0], 1, "p1")}${pod(pl[2], 3, "p3")}</div>
     ${pl.slice(3).map((p, i) => `
-      <div class="row"><span><span class="rank">${i + 4}</span>${esc(p.animal)} <b>${esc(p.name)}</b></span><b style="color:#6d28d9">${p.score} pts</b></div>
+      <div class="row"><span><span class="rank">${i + 4}</span>${esc(p.animal)} <b>${esc(p.name)}</b></span><b style="color:var(--accent)">${p.score} pts</b></div>
     `).join("")}`;
 }
 
@@ -734,8 +744,59 @@ load();
 '''
 
 
+THEME_BTN_CSS = r'''#theme-toggle{position:fixed;right:20px;bottom:20px;z-index:99999;border:0;border-radius:999px;padding:12px 18px;font-size:16px;font-weight:bold;cursor:pointer;background:#6d28d9;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.25)}'''
+
+THEME_FILTER_CSS = r'''html.dark{filter:invert(1) hue-rotate(180deg);background:#fff}
+html.dark img,html.dark picture,html.dark video,html.dark canvas{filter:invert(1) hue-rotate(180deg)}
+html.dark #theme-toggle{filter:invert(1) hue-rotate(180deg)}'''
+
+THEME_INIT = r'''<script>try{if(localStorage.getItem("quizup-theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}</script>'''
+
+THEME_TOGGLE = r'''
+<button id="theme-toggle" type="button" aria-label="Toggle dark mode"></button>
+<script>
+(function () {
+  var btn = document.getElementById("theme-toggle");
+  var root = document.documentElement;
+  function label() {
+    btn.textContent = root.classList.contains("dark") ? "☀️ Light" : "🌙 Dark";
+  }
+  btn.addEventListener("click", function () {
+    root.classList.toggle("dark");
+    try {
+      localStorage.setItem("quizup-theme", root.classList.contains("dark") ? "dark" : "light");
+    } catch (e) {}
+    label();
+  });
+  label();
+})();
+</script>
+'''
+
+
+def add_theme_toggle(html, use_filter=True):
+    """Adds the dark/light button. use_filter=True is for pages whose CSS we do not control."""
+
+    if "theme-toggle" in html:
+        return html
+
+    css = THEME_BTN_CSS + (THEME_FILTER_CSS if use_filter else "")
+    head = "<style>" + css + "</style>" + THEME_INIT
+
+    if "</head>" in html:
+        html = html.replace("</head>", head + "</head>", 1)
+    else:
+        html = head + html
+
+    if "</body>" in html:
+        return html.replace("</body>", THEME_TOGGLE + "</body>", 1)
+
+    return html + THEME_TOGGLE
+
+
 def build_page(html, nav):
-    return html.replace("/*BASE_CSS*/", BASE_CSS).replace("/*NAV*/", nav)
+    html = html.replace("/*BASE_CSS*/", BASE_CSS).replace("/*NAV*/", nav)
+    return add_theme_toggle(html, use_filter=False)
 
 
 MY_QUIZZES_PAGE = build_page(MY_QUIZZES_HTML, NAV_HOST)
@@ -1232,6 +1293,27 @@ def add_join_code_banner(html, code):
     return banner + html
 
 
+@app.after_request
+def inject_theme_toggle(response):
+    """Adds the dark/light button to every HTML page (including your template pages)."""
+
+    try:
+        if (
+            response.mimetype == "text/html"
+            and response.status_code < 400
+            and not response.direct_passthrough
+        ):
+            html = response.get_data(as_text=True)
+
+            if "theme-toggle" not in html and "<body" in html.lower():
+                response.set_data(add_theme_toggle(html))
+
+    except Exception:
+        app.logger.exception("Theme injection failed")
+
+    return response
+
+
 # ==========================================
 # HOME
 # ==========================================
@@ -1383,7 +1465,8 @@ def dashboard():
         return redirect(url_for("login"))
 
     html = render_template("dashboard.html")
-    return add_my_quizzes_link(html)
+    html = add_my_quizzes_link(html)
+    return add_theme_toggle(html)
 
 
 # ==========================================
