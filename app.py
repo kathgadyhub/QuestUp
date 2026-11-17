@@ -57,12 +57,20 @@ supabase: Client = create_client(
 # ==========================================
 
 BASE_CSS = r'''
-:root{--bg:#f4f3ff;--text:#1e1b3a;--card:#fff;--row:#f5f3ff;--chip:#ede9fe;--muted:#666;--border:#ddd6fe;--shadow:rgba(0,0,0,.07);--bar:#e5e7eb;--accent:#6d28d9;--good:#16a34a;--bad:#dc2626;--redbg:#fee2e2;--redtx:#b91c1c}
-html.dark{color-scheme:dark;--bg:#0f0d1f;--text:#ece9ff;--card:#1b1833;--row:#262244;--chip:#2e2858;--muted:#a09cc0;--border:#3b3470;--shadow:rgba(0,0,0,.5);--bar:#2e2a50;--accent:#a78bfa;--good:#4ade80;--bad:#f87171;--redbg:#4c1d1d;--redtx:#fca5a5}
+:root{--bg:#f4f3ff;--text:#1e1b3a;--card:#fff;--row:#f5f3ff;--chip:#ede9fe;--muted:#666;--border:#ddd6fe;--shadow:rgba(0,0,0,.07);--bar:#e5e7eb;--accent:var(--ac-l);--ac-l:#6d28d9;--ac-d:#a78bfa;--nav1:#5b3fd6;--nav2:#3b82f6;--good:#16a34a;--bad:#dc2626;--redbg:#fee2e2;--redtx:#b91c1c}
+html.dark{color-scheme:dark;--bg:#0f0d1f;--text:#ece9ff;--card:#1b1833;--row:#262244;--chip:#2e2858;--muted:#a09cc0;--border:#3b3470;--shadow:rgba(0,0,0,.5);--bar:#2e2a50;--accent:var(--ac-d);--good:#4ade80;--bad:#f87171;--redbg:#4c1d1d;--redtx:#fca5a5}
+html[data-color="blue"]{--ac-l:#2563eb;--ac-d:#60a5fa;--nav1:#1d4ed8;--nav2:#06b6d4}
+html[data-color="teal"]{--ac-l:#0d9488;--ac-d:#2dd4bf;--nav1:#0f766e;--nav2:#0ea5e9}
+html[data-color="green"]{--ac-l:#16a34a;--ac-d:#4ade80;--nav1:#15803d;--nav2:#84cc16}
+html[data-color="orange"]{--ac-l:#ea580c;--ac-d:#fb923c;--nav1:#c2410c;--nav2:#f59e0b}
+html[data-color="rose"]{--ac-l:#e11d48;--ac-d:#fb7185;--nav1:#be123c;--nav2:#f97316}
+html[data-color="pink"]{--ac-l:#db2777;--ac-d:#f472b6;--nav1:#a21caf;--nav2:#ec4899}
+@supports (background:color-mix(in srgb,red,blue)){:root,html.dark{--chip:color-mix(in srgb,var(--accent) 14%,var(--card));--row:color-mix(in srgb,var(--accent) 7%,var(--card));--border:color-mix(in srgb,var(--accent) 28%,var(--card))}}
+@supports (background:color-mix(in srgb,red,blue)){:root{--bg:color-mix(in srgb,var(--ac-l) 6%,#fff)}html.dark{--bg:color-mix(in srgb,var(--ac-d) 9%,#0b0a14)}}
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
 a{color:var(--accent)}
-.nav{background:linear-gradient(90deg,#5b3fd6,#3b82f6);padding:16px 28px;display:flex;justify-content:space-between;align-items:center}
+.nav{background:linear-gradient(90deg,var(--nav1),var(--nav2));padding:16px 28px;display:flex;justify-content:space-between;align-items:center}
 .nav .brand{color:#fff;font-size:22px;font-weight:bold;text-decoration:none}
 .nav a.link{color:#fff;text-decoration:none;margin-left:18px;font-weight:bold;font-size:14px}
 .wrap{max-width:900px;margin:24px auto;padding:0 16px}
@@ -70,7 +78,7 @@ a{color:var(--accent)}
 .card h2,.card h3{margin-top:0}
 .meta{color:var(--muted);font-size:14px}
 .center{text-align:center}
-.btn{border:0;border-radius:12px;padding:12px 20px;cursor:pointer;background:#6d28d9;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;display:inline-block}
+.btn{border:0;border-radius:12px;padding:12px 20px;cursor:pointer;background:var(--ac-l);color:#fff;font-size:16px;font-weight:bold;text-decoration:none;display:inline-block}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn.red{background:var(--redbg);color:var(--redtx)}
 .btn.small{padding:8px 14px;font-size:14px;border-radius:10px}
@@ -762,6 +770,12 @@ th{color:var(--muted);font-size:13px;text-transform:uppercase}
 .pbar>div{height:100%;border-radius:99px}
 .qrow{padding:12px 0;border-bottom:1px solid var(--border)}
 .qrow:last-child{border-bottom:0}
+.pcell{white-space:normal;min-width:240px}
+.pchip{display:inline-block;border-radius:999px;padding:4px 10px;margin:2px 4px 2px 0;font-weight:bold;font-size:13px}
+.pchip small{font-weight:normal}
+.pc-bad{background:rgba(220,38,38,.15);color:var(--bad)}
+.pc-warn{background:rgba(217,119,6,.18);color:#d97706}
+.pc-ok{background:rgba(22,163,74,.15);color:var(--good)}
 </style>
 </head>
 <body>
@@ -778,6 +792,12 @@ function esc(s) {
 }
 
 const STATUS = { lobby: "Waiting", active: "In progress", finished: "Finished" };
+
+function chip(p) {
+  const cls = p.accuracy === null || p.accuracy < 50 ? "pc-bad" : p.accuracy < 75 ? "pc-warn" : "pc-ok";
+  const acc = p.accuracy === null ? "no answers" : p.accuracy + "%";
+  return `<span class="pchip ${cls}" title="${p.correct} of ${p.answered} correct • score ${p.score}">${esc(p.animal)} ${esc(p.name)} <small>${acc}</small></span>`;
+}
 
 function render(d) {
   const head = `
@@ -806,7 +826,7 @@ function render(d) {
       <td>${esc(g.code)}</td>
       <td>${esc(new Date(g.created_at).toLocaleDateString())}</td>
       <td>${esc(STATUS[g.status] || g.status)}</td>
-      <td>${g.players}</td>
+      <td class="pcell">${g.players.length ? g.players.map(chip).join(" ") : '<span class="meta">No players</span>'}</td>
       <td>${g.avg_score}</td>
       <td>${g.accuracy}%</td>
     </tr>`).join("");
@@ -815,9 +835,10 @@ function render(d) {
     <div class="card">
       <h3>Quiz Performance</h3>
       <div class="tablewrap"><table>
-        <tr><th>Quiz</th><th>Code</th><th>Date</th><th>Status</th><th>Players</th><th>Avg score</th><th>Accuracy</th></tr>
+        <tr><th>Quiz</th><th>Code</th><th>Date</th><th>Status</th><th>Players (accuracy)</th><th>Avg score</th><th>Accuracy</th></tr>
         ${rows}
       </table></div>
+      <p class="meta" style="margin-bottom:0">Players who need the most help are listed first. <span class="pchip pc-bad">below 50%</span> <span class="pchip pc-warn">50-74%</span> <span class="pchip pc-ok">75% and above</span></p>
     </div>`;
 
   const diff = d.difficult.length
@@ -829,7 +850,28 @@ function render(d) {
         </div>`).join("")
     : '<p class="meta">No answers recorded yet.</p>';
 
-  app.innerHTML = head + stats + perf + `
+  const attention = d.attention.length
+    ? d.attention.map(p => {
+        const acc = p.accuracy === null ? 0 : p.accuracy;
+        const detail = p.accuracy === null
+          ? "No answers recorded"
+          : `${p.correct} of ${p.answered} answers correct (${p.accuracy}%)`;
+        return `<div class="qrow">
+          <div><b>${esc(p.animal)} ${esc(p.name)}</b> <span class="meta">• ${p.games} game(s) • avg score ${p.avg_score}</span></div>
+          <div class="meta">${detail}</div>
+          <div class="pbar"><div style="width:${acc}%;background:${acc < 50 ? "#dc2626" : "#d97706"}"></div></div>
+        </div>`;
+      }).join("")
+    : '<p class="meta">Everyone is doing well! 🎉 No player is below 75% accuracy.</p>';
+
+  const attentionCard = `
+    <div class="card">
+      <h3>🙋 Who Needs More Attention</h3>
+      <p class="meta">Players with the lowest accuracy across all your games.</p>
+      ${attention}
+    </div>`;
+
+  app.innerHTML = head + stats + attentionCard + perf + `
     <div class="card">
       <h3>❓ Difficult Questions</h3>
       <p class="meta">Questions that the fewest players answered correctly.</p>
@@ -859,20 +901,90 @@ load();
 '''
 
 
-THEME_BTN_CSS = r'''#theme-toggle{position:fixed;right:20px;bottom:20px;z-index:99999;border:0;border-radius:999px;padding:12px 18px;font-size:16px;font-weight:bold;cursor:pointer;background:#6d28d9;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.25)}'''
+THEME_BTN_CSS = r'''#theme-ui{position:fixed;right:20px;bottom:20px;z-index:99999;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+#theme-ui .tbtns{display:flex;gap:8px}
+#theme-ui button.tbtn{border:0;border-radius:999px;padding:12px 18px;font-size:16px;font-weight:bold;cursor:pointer;background:#6d28d9;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+#palette-panel{display:none;background:#fff;color:#1e1b3a;border-radius:16px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.3);width:230px;font-family:Arial,Helvetica,sans-serif}
+#palette-panel .ptitle{font-size:13px;font-weight:bold;margin-bottom:8px}
+#palette-panel .swatches{display:flex;flex-wrap:wrap;gap:10px}
+#palette-panel .sw{width:30px;height:30px;border-radius:50%;cursor:pointer;border:3px solid #fff;box-shadow:0 0 0 2px #d1d5db}
+#palette-panel .sw.on{box-shadow:0 0 0 3px #111827}'''
 
-THEME_FILTER_CSS = r'''html.dark{filter:invert(1) hue-rotate(180deg);background:#fff}
-html.dark img,html.dark picture,html.dark video,html.dark canvas{filter:invert(1) hue-rotate(180deg)}
-html.dark #theme-toggle{filter:invert(1) hue-rotate(180deg)}'''
+THEME_FILTER_CSS = r'''html[data-color="blue"]{--hue:-45deg}
+html[data-color="teal"]{--hue:-90deg}
+html[data-color="green"]{--hue:-121deg}
+html[data-color="orange"]{--hue:118deg}
+html[data-color="rose"]{--hue:84deg}
+html[data-color="pink"]{--hue:70deg}
+html[data-color]:not(.dark){filter:hue-rotate(var(--hue,0deg))}
+html.dark{filter:invert(1) hue-rotate(180deg) hue-rotate(var(--hue,0deg));background:#fff}
+html.dark img,html.dark picture,html.dark video,html.dark canvas,html.dark #theme-ui{filter:invert(1) hue-rotate(180deg) hue-rotate(calc(var(--hue,0deg) * -1))}
+html[data-color]:not(.dark) img,html[data-color]:not(.dark) picture,html[data-color]:not(.dark) video,html[data-color]:not(.dark) canvas,html[data-color]:not(.dark) #theme-ui{filter:hue-rotate(calc(var(--hue,0deg) * -1))}'''
 
-THEME_INIT = r'''<script>try{if(localStorage.getItem("quizup-theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}</script>'''
+THEME_INIT = r'''<script>try{var r=document.documentElement;if(localStorage.getItem("quizup-theme")==="dark")r.classList.add("dark");var c=localStorage.getItem("quizup-color");if(c&&c!=="purple")r.setAttribute("data-color",c)}catch(e){}</script>'''
 
 THEME_TOGGLE = r'''
-<button id="theme-toggle" type="button" aria-label="Toggle dark mode"></button>
+<div id="theme-ui">
+  <div id="palette-panel">
+    <div class="ptitle">🎨 Choose your color</div>
+    <div class="swatches" id="palette-swatches"></div>
+  </div>
+  <div class="tbtns">
+    <button id="palette-toggle" class="tbtn" type="button" aria-label="Choose theme color">🎨 Color</button>
+    <button id="theme-toggle" class="tbtn" type="button" aria-label="Toggle dark mode"></button>
+  </div>
+</div>
 <script>
 (function () {
-  var btn = document.getElementById("theme-toggle");
+  var COLORS = [
+    ["purple", "Purple", "#6d28d9"], ["blue", "Blue", "#2563eb"], ["teal", "Teal", "#0d9488"],
+    ["green", "Green", "#16a34a"], ["orange", "Orange", "#ea580c"], ["rose", "Rose", "#e11d48"],
+    ["pink", "Pink", "#db2777"]
+  ];
   var root = document.documentElement;
+  var btn = document.getElementById("theme-toggle");
+  var pal = document.getElementById("palette-toggle");
+  var panel = document.getElementById("palette-panel");
+  var box = document.getElementById("palette-swatches");
+
+  function current() {
+    try { return localStorage.getItem("quizup-color") || "purple"; } catch (e) { return "purple"; }
+  }
+
+  function paint() {
+    var cur = current(), hex = "#6d28d9";
+    COLORS.forEach(function (c) { if (c[0] === cur) hex = c[2]; });
+    btn.style.background = hex;
+    pal.style.background = hex;
+    Array.prototype.forEach.call(box.children, function (el) {
+      el.className = "sw" + (el.getAttribute("data-c") === cur ? " on" : "");
+    });
+  }
+
+  function setColor(key) {
+    try { localStorage.setItem("quizup-color", key); } catch (e) {}
+    if (key === "purple") root.removeAttribute("data-color");
+    else root.setAttribute("data-color", key);
+    paint();
+  }
+
+  COLORS.forEach(function (c) {
+    var el = document.createElement("span");
+    el.setAttribute("data-c", c[0]);
+    el.title = c[1];
+    el.style.background = c[2];
+    el.addEventListener("click", function () { setColor(c[0]); });
+    box.appendChild(el);
+  });
+
+  pal.addEventListener("click", function (e) {
+    e.stopPropagation();
+    panel.style.display = panel.style.display === "block" ? "none" : "block";
+  });
+  document.addEventListener("click", function (e) {
+    if (!panel.contains(e.target)) panel.style.display = "none";
+  });
+
   function label() {
     btn.textContent = root.classList.contains("dark") ? "☀️ Light" : "🌙 Dark";
   }
@@ -883,7 +995,9 @@ THEME_TOGGLE = r'''
     } catch (e) {}
     label();
   });
+
   label();
+  paint();
 })();
 </script>
 '''
@@ -2252,23 +2366,24 @@ def api_reports():
             or []
         )
 
-        empty = {
-            "total_games": 0,
-            "total_players": 0,
-            "average_score": 0,
-            "accuracy": 0,
-            "games": [],
-            "difficult": []
-        }
-
         if not games:
-            return jsonify(empty), 200
+            return jsonify({
+                "total_games": 0,
+                "total_players": 0,
+                "average_score": 0,
+                "accuracy": 0,
+                "games": [],
+                "difficult": [],
+                "attention": []
+            }), 200
 
         game_ids = [g["id"] for g in games]
 
-        players = fetch_all_for_games("players", "id,game_id,score", game_ids)
+        players = fetch_all_for_games(
+            "players", "id,game_id,name,animal,score", game_ids
+        )
         answers = fetch_all_for_games(
-            "answers", "game_id,question_index,is_correct", game_ids
+            "answers", "game_id,player_id,question_index,is_correct", game_ids
         )
 
         players_by_game = {}
@@ -2276,14 +2391,25 @@ def api_reports():
             players_by_game.setdefault(player["game_id"], []).append(player)
 
         answers_by_game = {}
+        answers_by_player = {}
+
         for answer in answers:
             answers_by_game.setdefault(answer["game_id"], []).append(answer)
+
+            stat = answers_by_player.setdefault(
+                answer["player_id"], {"answered": 0, "correct": 0}
+            )
+            stat["answered"] += 1
+
+            if answer["is_correct"]:
+                stat["correct"] += 1
 
         def percent(part, whole):
             return round(part * 100 / whole) if whole else 0
 
         game_rows = []
         per_question = {}
+        people = {}
 
         for game in games:
             game_players = players_by_game.get(game["id"], [])
@@ -2292,12 +2418,55 @@ def api_reports():
             correct = sum(1 for a in game_answers if a["is_correct"])
             total_score = sum((p["score"] or 0) for p in game_players)
 
+            player_rows = []
+
+            for player in game_players:
+                stat = answers_by_player.get(
+                    player["id"], {"answered": 0, "correct": 0}
+                )
+
+                accuracy = (
+                    percent(stat["correct"], stat["answered"])
+                    if stat["answered"] else None
+                )
+
+                player_rows.append({
+                    "name": player["name"],
+                    "animal": player.get("animal") or "",
+                    "score": player["score"] or 0,
+                    "answered": stat["answered"],
+                    "correct": stat["correct"],
+                    "accuracy": accuracy
+                })
+
+                key = str(player["name"]).strip().lower()
+
+                person = people.setdefault(key, {
+                    "name": player["name"],
+                    "animal": player.get("animal") or "",
+                    "answered": 0,
+                    "correct": 0,
+                    "score": 0,
+                    "games": 0
+                })
+
+                person["answered"] += stat["answered"]
+                person["correct"] += stat["correct"]
+                person["score"] += player["score"] or 0
+                person["games"] += 1
+
+            # Players who need the most help come first.
+            player_rows.sort(key=lambda p: (
+                -1 if p["accuracy"] is None else p["accuracy"],
+                str(p["name"]).lower()
+            ))
+
             game_rows.append({
                 "title": game.get("quiz_title") or "Quiz",
                 "code": game["code"],
                 "status": game["status"],
                 "created_at": game.get("created_at"),
-                "players": len(game_players),
+                "players": player_rows,
                 "avg_score": (
                     round(total_score / len(game_players))
                     if game_players else 0
@@ -2318,6 +2487,31 @@ def api_reports():
 
                 if answer["is_correct"]:
                     stat["correct"] += 1
+
+        # Players below 75% accuracy (or with no answers) across all games.
+        attention = []
+
+        for person in people.values():
+            accuracy = (
+                percent(person["correct"], person["answered"])
+                if person["answered"] else None
+            )
+
+            if accuracy is None or accuracy < 75:
+                attention.append({
+                    "name": person["name"],
+                    "animal": person["animal"],
+                    "games": person["games"],
+                    "answered": person["answered"],
+                    "correct": person["correct"],
+                    "accuracy": accuracy,
+                    "avg_score": round(person["score"] / person["games"])
+                })
+
+        attention.sort(key=lambda p: (
+            -1 if p["accuracy"] is None else p["accuracy"],
+            str(p["name"]).lower()
+        ))
 
         ranked = sorted(
             per_question.items(),
@@ -2354,7 +2548,8 @@ def api_reports():
             ),
             "accuracy": percent(total_correct, len(answers)),
             "games": game_rows[:15],
-            "difficult": difficult
+            "difficult": difficult,
+            "attention": attention[:10]
         }), 200
 
     except Exception:
