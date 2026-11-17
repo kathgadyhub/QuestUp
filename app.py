@@ -774,19 +774,34 @@ THEME_TOGGLE = r'''
 '''
 
 
-def add_theme_toggle(html, use_filter=True):
-    """Adds the dark/light button. use_filter=True is for pages whose CSS we do not control."""
+def add_theme_toggle(html, use_filter=True, button=False):
+    """Applies the saved theme to a page. The Dark/Light button is added only when button=True."""
 
-    if "theme-toggle" in html:
+    if "<!--quizup-theme-->" in html:
         return html
 
-    css = THEME_BTN_CSS + (THEME_FILTER_CSS if use_filter else "")
-    head = "<style>" + css + "</style>" + THEME_INIT
+    css = ""
+
+    if use_filter:
+        css += THEME_FILTER_CSS
+
+    if button:
+        css += THEME_BTN_CSS
+
+    head = "<!--quizup-theme-->"
+
+    if css:
+        head += "<style>" + css + "</style>"
+
+    head += THEME_INIT
 
     if "</head>" in html:
         html = html.replace("</head>", head + "</head>", 1)
     else:
         html = head + html
+
+    if not button:
+        return html
 
     if "</body>" in html:
         return html.replace("</body>", THEME_TOGGLE + "</body>", 1)
@@ -1295,7 +1310,7 @@ def add_join_code_banner(html, code):
 
 @app.after_request
 def inject_theme_toggle(response):
-    """Adds the dark/light button to every HTML page (including your template pages)."""
+    """Applies the saved Dark/Light choice to every HTML page (no button, it is on the dashboard)."""
 
     try:
         if (
@@ -1305,7 +1320,7 @@ def inject_theme_toggle(response):
         ):
             html = response.get_data(as_text=True)
 
-            if "theme-toggle" not in html and "<body" in html.lower():
+            if "quizup-theme" not in html and "<body" in html.lower():
                 response.set_data(add_theme_toggle(html))
 
     except Exception:
@@ -1466,7 +1481,9 @@ def dashboard():
 
     html = render_template("dashboard.html")
     html = add_my_quizzes_link(html)
-    return add_theme_toggle(html)
+
+    # The Dark/Light button lives only here; the choice applies to every page.
+    return add_theme_toggle(html, use_filter=True, button=True)
 
 
 # ==========================================
